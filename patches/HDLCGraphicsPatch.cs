@@ -32,80 +32,101 @@ namespace HDLethalCompanyPatch.patches
 
         public static void SettingsChanged()
         {
-            HDLCPatch.Logger.LogInfo("Applying settings changes...");
-
-            //Store values from HDLethalCompany to use later if EnableHDPatchOverrideSettings is false
-            if(!HasDefaults)
+            try
             {
-                HDLCPatch.DefaultResolutionScale = (float)HDLCPatchProperties.GraphicsPatch.GetField("multiplier").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                HDLCPatch.DefaultFogQuality = (int)HDLCPatchProperties.GraphicsPatch.GetField("m_setFogQuality").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                HDLCPatch.DefaultLODQuality = (int)HDLCPatchProperties.GraphicsPatch.GetField("m_setLOD").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                HDLCPatch.DefaultShadowQuality = (int)HDLCPatchProperties.GraphicsPatch.GetField("m_setShadowQuality").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                HDLCPatch.DefaultEnableFog = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableFog").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                HDLCPatch.DefaultEnablePostProcessing = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enablePostProcessing").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                HDLCPatch.DefaultEnableFoliage = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableFoliage").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                HDLCPatch.DefaultEnableResolutionOverride = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableResolutionFix").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                HDLCPatch.DefaultEnableAntiAliasing = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableAntiAliasing").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                HDLCPatch.DefaultTextureQuality = (int)HDLCPatchProperties.GraphicsPatch.GetField("m_setTextureResolution").GetValue(HDLCPatchProperties.GraphicsPatchObj);
+                HDLCPatch.Logger.LogInfo("Applying settings changes...");
 
-                HasDefaults = true;
+                //Store values from HDLethalCompany to use later if EnableHDPatchOverrideSettings is false
+                if (!HasDefaults)
+                {
+                    HDLCPatch.DefaultResolutionScale = (float)HDLCPatchProperties.GraphicsPatch.GetField("multiplier").GetValue(HDLCPatchProperties.GraphicsPatchObj);
+                    HDLCPatch.DefaultFogQuality = (int)HDLCPatchProperties.GraphicsPatch.GetField("m_setFogQuality").GetValue(HDLCPatchProperties.GraphicsPatchObj);
+                    HDLCPatch.DefaultLODQuality = (int)HDLCPatchProperties.GraphicsPatch.GetField("m_setLOD").GetValue(HDLCPatchProperties.GraphicsPatchObj);
+                    HDLCPatch.DefaultShadowQuality = (int)HDLCPatchProperties.GraphicsPatch.GetField("m_setShadowQuality").GetValue(HDLCPatchProperties.GraphicsPatchObj);
+                    HDLCPatch.DefaultEnableFog = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableFog").GetValue(HDLCPatchProperties.GraphicsPatchObj);
+                    HDLCPatch.DefaultEnablePostProcessing = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enablePostProcessing").GetValue(HDLCPatchProperties.GraphicsPatchObj);
+                    HDLCPatch.DefaultEnableFoliage = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableFoliage").GetValue(HDLCPatchProperties.GraphicsPatchObj);
+                    HDLCPatch.DefaultEnableResolutionOverride = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableResolutionFix").GetValue(HDLCPatchProperties.GraphicsPatchObj);
+                    HDLCPatch.DefaultEnableAntiAliasing = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableAntiAliasing").GetValue(HDLCPatchProperties.GraphicsPatchObj);
+                    HDLCPatch.DefaultTextureQuality = (int)HDLCPatchProperties.GraphicsPatch.GetField("m_setTextureResolution").GetValue(HDLCPatchProperties.GraphicsPatchObj);
+
+                    HasDefaults = true;
+                }
+
+                //Set values
+                if (HDLCPatch.EnableHDPatchOverrideSettings.Value)
+                {
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_setShadowQuality").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.ShadowQuality.Value);
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_setLOD").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.LODQuality.Value);
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_setFogQuality").SetValue(HDLCPatchProperties.GraphicsPatchObj, (int)HDLCPatch.FogQuality.Value);
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_widthResolution").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.ResolutionScale.Value * 860);
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_heightResolution").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.ResolutionScale.Value * 520);
+                    HDLCPatchProperties.GraphicsPatch.GetField("multiplier").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.ResolutionScale.Value);
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_enableFog").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.EnableFog.Value);
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_enablePostProcessing").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.EnablePostProcessing.Value);
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_enableFoliage").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.EnableFoliage.Value);
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_enableResolutionFix").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.EnableResolutionOverride.Value);
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_setTextureResolution").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.TextureQuality.Value);
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_enableAntiAliasing").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.EnableAntiAliasing.Value);
+                }
+                else
+                {
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_setShadowQuality").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultShadowQuality);
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_setLOD").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultLODQuality);
+                    HDLCPatchProperties.GraphicsPatch.GetField("multiplier").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultResolutionScale);
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_widthResolution").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultResolutionScale * 860);
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_heightResolution").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultResolutionScale * 520);
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_setFogQuality").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultFogQuality);
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_enableFog").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultEnableFog);
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_enablePostProcessing").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultEnablePostProcessing);
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_enableFoliage").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultEnableFoliage);
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_enableResolutionFix").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultEnableResolutionOverride);
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_setTextureResolution").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultTextureQuality);
+                    HDLCPatchProperties.GraphicsPatch.GetField("m_enableAntiAliasing").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultEnableAntiAliasing);
+                }
+
+                //Keep a local reference of some values
+                FogEnabled = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableFog").GetValue(HDLCPatchProperties.GraphicsPatchObj);
+                EnablePostProcessing = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enablePostProcessing").GetValue(HDLCPatchProperties.GraphicsPatchObj);
+                EnableFoliage = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableFoliage").GetValue(HDLCPatchProperties.GraphicsPatchObj);
+                EnableResolutionOverride = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableResolutionFix").GetValue(HDLCPatchProperties.GraphicsPatchObj);
+                ResolutionScale = (float)HDLCPatchProperties.GraphicsPatch.GetField("multiplier").GetValue(HDLCPatchProperties.GraphicsPatchObj);
+                TextureQuality = (int)HDLCPatchProperties.GraphicsPatch.GetField("m_setTextureResolution").GetValue(HDLCPatchProperties.GraphicsPatchObj);
+                DisableFoliageSetting = HDLCPatch.DisableFoliageConfig.Value;
+                EnablePatchOverride = HDLCPatch.EnableHDPatchOverrideSettings.Value;
+                AAMode = HDLCPatch.AASetting.Value;
+                LODQuality = (int)HDLCPatchProperties.GraphicsPatch.GetField("m_setLOD").GetValue(HDLCPatchProperties.GraphicsPatchObj);
+
+                //Make sure the player reference is not null before setting some settings
+                if (PlayerRef != null)
+                {
+                    try { SetCameraData(PlayerRef); } catch(Exception e) { HDLCPatch.Logger.LogError($"Failed to set camera related settings\n{e.ToString()}"); }
+                    try { SetResolution(PlayerRef); } catch(Exception e) { HDLCPatch.Logger.LogError($"Failed to set resolution\n{e.ToString()}"); }
+                }
+
+                try { SetFogQuality(); } catch(Exception e) { HDLCPatch.Logger.LogError($"Failed to set fog settings\n{e.ToString()}"); }
+                try { SetTextureQuality(); } catch(Exception e) { HDLCPatch.Logger.LogError($"Failed to set texture quality\n{e.ToString()}"); }
+
+                HDLCPatch.Logger.LogInfo("Settings applied");
             }
-
-            //Set values
-            if (HDLCPatch.EnableHDPatchOverrideSettings.Value)
+            catch(Exception ex)
             {
-                HDLCPatchProperties.GraphicsPatch.GetField("m_setShadowQuality").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.ShadowQuality.Value);
-                HDLCPatchProperties.GraphicsPatch.GetField("m_setLOD").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.LODQuality.Value);
-                HDLCPatchProperties.GraphicsPatch.GetField("m_setFogQuality").SetValue(HDLCPatchProperties.GraphicsPatchObj, (int)HDLCPatch.FogQuality.Value);
-                HDLCPatchProperties.GraphicsPatch.GetField("m_widthResolution").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.ResolutionScale.Value * 860);
-                HDLCPatchProperties.GraphicsPatch.GetField("m_heightResolution").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.ResolutionScale.Value * 520);
-                HDLCPatchProperties.GraphicsPatch.GetField("multiplier").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.ResolutionScale.Value);
-                HDLCPatchProperties.GraphicsPatch.GetField("m_enableFog").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.EnableFog.Value);
-                HDLCPatchProperties.GraphicsPatch.GetField("m_enablePostProcessing").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.EnablePostProcessing.Value);
-                HDLCPatchProperties.GraphicsPatch.GetField("m_enableFoliage").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.EnableFoliage.Value);
-                HDLCPatchProperties.GraphicsPatch.GetField("m_enableResolutionFix").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.EnableResolutionOverride.Value);
-                HDLCPatchProperties.GraphicsPatch.GetField("m_setTextureResolution").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.TextureQuality.Value);
-                HDLCPatchProperties.GraphicsPatch.GetField("m_enableAntiAliasing").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.EnableAntiAliasing.Value);
+                HDLCPatch.Logger.LogError("Failed to change settings!");
+                HDLCPatch.Logger.LogError(ex.ToString());
+                HDLCPatch.Logger.LogInfo("Attempting to try reset internal methods");
+
+                try
+                {
+                    Assembly assembly = HDLCPatch.HarmonyGetAssembly("HDLethalCompany");
+                    HDLCPatch.SetupInternalMethods(assembly);
+                    HDLCPatch.Logger.LogInfo("Reset may have succeded. Try changing settings again");
+                }
+                catch(Exception e) 
+                {
+                    HDLCPatch.Logger.LogFatal("Failed to setup internal method references");
+                    HDLCPatch.Logger.LogError(e.ToString());
+                }
             }
-            else
-            {
-                HDLCPatchProperties.GraphicsPatch.GetField("m_setShadowQuality").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultShadowQuality);
-                HDLCPatchProperties.GraphicsPatch.GetField("m_setLOD").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultLODQuality);
-                HDLCPatchProperties.GraphicsPatch.GetField("multiplier").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultResolutionScale);
-                HDLCPatchProperties.GraphicsPatch.GetField("m_widthResolution").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultResolutionScale * 860);
-                HDLCPatchProperties.GraphicsPatch.GetField("m_heightResolution").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultResolutionScale * 520);
-                HDLCPatchProperties.GraphicsPatch.GetField("m_setFogQuality").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultFogQuality);
-                HDLCPatchProperties.GraphicsPatch.GetField("m_enableFog").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultEnableFog);
-                HDLCPatchProperties.GraphicsPatch.GetField("m_enablePostProcessing").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultEnablePostProcessing);
-                HDLCPatchProperties.GraphicsPatch.GetField("m_enableFoliage").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultEnableFoliage);
-                HDLCPatchProperties.GraphicsPatch.GetField("m_enableResolutionFix").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultEnableResolutionOverride);
-                HDLCPatchProperties.GraphicsPatch.GetField("m_setTextureResolution").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultTextureQuality);
-                HDLCPatchProperties.GraphicsPatch.GetField("m_enableAntiAliasing").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultEnableAntiAliasing);
-            }
-
-            //Keep a local reference of some values
-            FogEnabled = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableFog").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-            EnablePostProcessing = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enablePostProcessing").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-            EnableFoliage = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableFoliage").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-            EnableResolutionOverride = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableResolutionFix").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-            ResolutionScale = (float)HDLCPatchProperties.GraphicsPatch.GetField("multiplier").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-            TextureQuality = (int)HDLCPatchProperties.GraphicsPatch.GetField("m_setTextureResolution").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-            DisableFoliageSetting = HDLCPatch.DisableFoliageConfig.Value;
-            EnablePatchOverride = HDLCPatch.EnableHDPatchOverrideSettings.Value;
-            AAMode = HDLCPatch.AASetting.Value;
-            LODQuality = (int)HDLCPatchProperties.GraphicsPatch.GetField("m_setLOD").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-
-            //Make sure the player reference is not null before setting some settings
-            if (PlayerRef != null)
-            {
-                SetCameraData(PlayerRef);
-                SetResolution(PlayerRef);
-            }
-
-            SetFogQuality();
-            SetTextureQuality();
-
-            HDLCPatch.Logger.LogInfo("Settings applied");
         }
 
         public static void SetCameraData(PlayerControllerB player)
