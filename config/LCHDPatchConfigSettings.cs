@@ -1,4 +1,5 @@
-﻿using LethalConfig;
+﻿using HDLethalCompanyPatch.patches;
+using LethalConfig;
 using LethalConfig.ConfigItems;
 using LethalConfig.ConfigItems.Options;
 
@@ -25,7 +26,7 @@ namespace HDLethalCompanyPatch.config
             LethalConfigManager.SetModDescription("A patch mod for HDLethalCompany that also includes runtime configs through LethalConfig");
 
             EnableHDPatchOverrideSettingsItem = new BoolCheckBoxConfigItem(HDLCPatch.EnableHDPatchOverrideSettings, false);
-            ResolutionScaleItem = new FloatSliderConfigItem(HDLCPatch.ResolutionScale, new FloatSliderOptions { Max = 4.465f, Min = 1, RequiresRestart = false });
+            ResolutionScaleItem = new FloatSliderConfigItem(HDLCPatch.ResolutionScale, new FloatSliderOptions { Max = 4.465f, Min = 0.25f, RequiresRestart = false });
             EnableFogItem = new BoolCheckBoxConfigItem(HDLCPatch.EnableFog, false);
             FogQualityItem = new EnumDropDownConfigItem<QualitySetting>(HDLCPatch.FogQuality, false);
             ShadowQualityItem = new EnumDropDownConfigItem<QualitySetting>(HDLCPatch.ShadowQuality, false);
@@ -51,6 +52,10 @@ namespace HDLethalCompanyPatch.config
             LethalConfigManager.AddConfigItem(EnableAntiAliasingItem);
             LethalConfigManager.AddConfigItem(DisableFoliageConfigItem);
             LethalConfigManager.AddConfigItem(AASettingItem);
+            LethalConfigManager.AddConfigItem(new GenericButtonConfigItem("Commands", "ForceSettingsChange", "Makes a call to HDLC to run a settings change event. \nUse this if internal references failed to set on first change", "Force Change Settings", ()=>
+            {
+                HDLCGraphicsPatch.SettingsChanged();
+            }));
         }
     }
 }
