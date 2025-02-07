@@ -188,7 +188,7 @@ namespace HDLethalCompanyPatch
             //Some mods break assembly names, getting reference elsewhere
             //Assembly assembly = GetAssembly("HDLethalCompany");
 
-            try { HDLCPatchProperties.HDAssembly = assembly; } catch(Exception e) { Logger.LogError("Failed to get assembly reference"); Logger.LogInfo("Got assembly of " + assembly.GetName().Name); }
+            try { HDLCPatchProperties.HDAssembly = assembly; Logger.LogInfo("Got assembly of " + assembly.GetName().Name); } catch(Exception e) { Logger.LogError("Failed to get assembly reference"); }
             try { HDLCPatchProperties.GraphicsPatchObj = assembly.CreateInstance("HDLethalCompany.Patch.GraphicsPatch"); } catch (Exception e) { Logger.LogError("Failed to get reference to GraphicsPatch"); }
 
             Type t = HDLCPatchProperties.GraphicsPatchObj.GetType();
