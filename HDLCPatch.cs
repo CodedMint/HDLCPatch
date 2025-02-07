@@ -31,7 +31,7 @@ namespace HDLethalCompanyPatch
     {
         public const string Name = "HDLCPatch";
         public const string GUID = "HDLCPatch";
-        public const string Version = "1.1.1";
+        public const string Version = "1.1.2";
 
         public static Assembly HDAssembly;
         public static object GraphicsPatchObj;
@@ -97,14 +97,15 @@ namespace HDLethalCompanyPatch
         {
             Logger.LogInfo("Patching...");
             List<MethodBase> methods = (List<MethodBase>)Harmony.GetAllPatchedMethods();
+            bool roundPostfixSuccess = false;
+            bool startPrefixSuccess = false;
+            bool internalRefsSuccess = true;
 
             foreach (MethodBase method in methods)
             {
                 PatchInfo patchi = PatchManager.GetPatchInfo(method);
 
                 Patch[] prefixPatches = patchi.prefixes;
-                bool roundPostfixSuccess = false;
-                bool startPrefixSuccess = false;
 
                 foreach (var p in prefixPatches)
                 {
@@ -112,7 +113,7 @@ namespace HDLethalCompanyPatch
                     {
                         if (p.owner == "HDLethalCompany" || p.owner == "HDLethalCompanyRemake")
                         {
-                            Logger.LogInfo("Found problem patch from HDLethalCompany RoundPostFix, unpatching it...");
+                            Logger.LogInfo("Attempting to unpatch HDLethalCompany RoundPostFix");
                             _harmony.Unpatch(method, p.PatchMethod);
                             HDLethal = p.PatchMethod.Module.Assembly;
                             roundPostfixSuccess = true;
@@ -123,24 +124,32 @@ namespace HDLethalCompanyPatch
                     {
                         if (p.owner == "HDLethalCompany" || p.owner == "HDLethalCompanyRemake")
                         {
-                            Logger.LogInfo("Unpatching StartPrefix to use custom patch instead");
+                            Logger.LogInfo("Attempting to unpatch HDLethalCompany RoundPostFix");
                             _harmony.Unpatch(method, p.PatchMethod);
                             startPrefixSuccess = true;
                         }
                     }
-
-                    if(roundPostfixSuccess)
-                    {
-                        Logger.LogInfo("Patched RoundPostfix success!");
-                    }
-
-                    if(startPrefixSuccess)
-                    {
-                        Logger.LogInfo("Patched StartPrefix success!");
-                    }
                 }
             }
-            
+
+            if (roundPostfixSuccess)
+            {
+                Logger.LogInfo("Unpatch RoundPostfix success!");
+            }
+            else
+            {
+                Logger.LogFatal("Failed to unpatch RoundPostfix");
+            }
+
+            if (startPrefixSuccess)
+            {
+                Logger.LogInfo("Unpatch StartPrefix success!");
+            }
+            else
+            {
+                Logger.LogFatal("Failed to unpatch StartPrefix");
+            }
+
             _harmony.PatchAll(typeof(HDLCGraphicsPatch));
 
             try
@@ -149,21 +158,41 @@ namespace HDLethalCompanyPatch
             }
             catch(Exception e)
             {
-                Logger.LogWarning("Failed to patch HDLethalCompany - " + e.ToString());
+                Logger.LogWarning("Failed to set internal method references \n" + e.ToString());
                 Logger.LogInfo("Attempting to get assembly with a different method...");
 
                 try
                 {
-                    HDLethal = GetAssembly("HDLethalCompany");
+                    HDLethal = HarmonyGetAssembly("HDLethalCompany");
                     SetupInternalMethods(HDLethal);
                 }
                 catch (Exception e2)
                 {
-                    Logger.LogError("Backup method for getting assembly failed! " + e2.ToString());
+                    Logger.LogError("Backup method for getting assembly failed! \n" + e2.ToString());
+                    Logger.LogInfo("Attempting 3rd method to get internal references...");
+
+                    try
+                    {
+                        HDLethal = GetAssembly("HDLethalCompany");
+                        SetupInternalMethods(HDLethal);
+                    }
+                    catch(Exception e3)
+                    {
+                        Logger.LogFatal("All methods to get HDLethalCompany internal methods failed!");
+                        Logger.LogError(e3.ToString());
+                        internalRefsSuccess = false;
+                    }
                 }
             }
 
-            Logger.LogInfo("Finished patching process");
+            if (internalRefsSuccess)
+            {
+                Logger.LogInfo("Finished patching process");
+            }
+            else
+            {
+                Logger.LogFatal("Failed to set internal references to HDLethalCompany methods. Things might not work right!");
+            }
         }
 
         //This might not work due to some mods changing assembly names!!!
@@ -173,23 +202,54 @@ namespace HDLethalCompanyPatch
             {
                 if(assembly.GetName().Name.Contains(assemblyName) && !assembly.GetName().Name.Contains("HDLethalCompanyPatch"))
                 {
+                    Logger.LogInfo($"Got assembly: " + assembly.GetName().Name);
                     return assembly;
                 }
+            }
+
+            Logger.LogError("Failed to get assembly");
+            Logger.LogInfo("Currently available assemblies from AppDomain.CurrentDomain: ");
+
+            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                Logger.LogInfo($"{assembly.GetName().Name}");
+            }
+
+            return null;
+        }
+
+        public static Assembly HarmonyGetAssembly(string assemblyName)
+        {
+            foreach (Assembly assembly in AccessTools.AllAssemblies())
+            {
+                if (assembly.GetName().Name.Contains(assemblyName) && !assembly.GetName().Name.Contains("HDLethalCompanyPatch"))
+                {
+                    Logger.LogInfo($"Got assembly: " + assembly.GetName().Name);
+                    return assembly;
+                }
+            }
+
+            Logger.LogError("Failed to get assembly");
+            Logger.LogInfo("Currently available assemblies from AccessTools: ");
+
+            foreach(Assembly assembly in AccessTools.AllAssemblies())
+            {
+                Logger.LogInfo($"{assembly.GetName().Name}");
             }
 
             return null;
         }
 
         //Grab references to HDLethalCompany internal methods to call later
-        private static void SetupInternalMethods(Assembly assembly)
+        public static void SetupInternalMethods(Assembly assembly)
         {
             Logger.LogInfo("Creating references to internal methods...");
 
             //Some mods break assembly names, getting reference elsewhere
             //Assembly assembly = GetAssembly("HDLethalCompany");
 
-            try { HDLCPatchProperties.HDAssembly = assembly; Logger.LogInfo("Got assembly of " + assembly.GetName().Name); } catch(Exception e) { Logger.LogError("Failed to get assembly reference"); }
-            try { HDLCPatchProperties.GraphicsPatchObj = assembly.CreateInstance("HDLethalCompany.Patch.GraphicsPatch"); } catch (Exception e) { Logger.LogError("Failed to get reference to GraphicsPatch"); }
+            try { HDLCPatchProperties.HDAssembly = assembly; Logger.LogInfo("Got assembly of " + assembly.GetName().Name); } catch(Exception e) { Logger.LogError("Failed to get assembly reference\n" + e.ToString()); }
+            try { HDLCPatchProperties.GraphicsPatchObj = assembly.CreateInstance("HDLethalCompany.Patch.GraphicsPatch"); } catch (Exception e) { Logger.LogError("Failed to get reference to GraphicsPatch\n" + e.ToString()); }
 
             Type t = HDLCPatchProperties.GraphicsPatchObj.GetType();
             HDLCPatchProperties.GraphicsPatch = t;
