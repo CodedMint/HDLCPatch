@@ -20,11 +20,18 @@ namespace HDLethalCompanyPatch
         High
     }
 
+    public enum AntiAliasingSetting
+    {
+        FAA,
+        TAA,
+        SMAA
+    }
+
     public static class HDLCPatchProperties
     {
         public const string Name = "HDLCPatch";
         public const string GUID = "HDLCPatch";
-        public const string Version = "1.1.0";
+        public const string Version = "1.1.1";
 
         public static Assembly HDAssembly;
         public static object GraphicsPatchObj;
@@ -36,8 +43,6 @@ namespace HDLethalCompanyPatch
         public static MethodInfo SetLevelOfDetail;
         public static MethodInfo ToggleVolumetricFog;
         public static MethodInfo SetShadowQuality;
-        public static MethodInfo SetAntiAliasing;
-        public static MethodInfo SetTextureQuality;
     }
 
     [BepInPlugin(HDLCPatchProperties.GUID, HDLCPatchProperties.Name, HDLCPatchProperties.Version)]
@@ -48,29 +53,32 @@ namespace HDLethalCompanyPatch
         internal static new ManualLogSource Logger;
         private static Harmony _harmony;
 
-        public static ConfigEntry<bool> EnableHDPatchOverrideSettings;
-        public static ConfigEntry<float> ResolutionScale;
-        public static ConfigEntry<QualitySetting> FogQuality;
-        public static ConfigEntry<bool> EnableFog;
         public static ConfigEntry<QualitySetting> ShadowQuality;
         public static ConfigEntry<QualitySetting> LODQuality;
         public static ConfigEntry<QualitySetting> TextureQuality;
+        public static ConfigEntry<QualitySetting> FogQuality;
+        public static ConfigEntry<AntiAliasingSetting> AASetting;
+        public static ConfigEntry<float> ResolutionScale;
+        public static ConfigEntry<bool> EnableHDPatchOverrideSettings;
+        public static ConfigEntry<bool> EnableFog;
         public static ConfigEntry<bool> EnablePostProcessing;
         public static ConfigEntry<bool> EnableFoliage;
         public static ConfigEntry<bool> EnableResolutionOverride;
         public static ConfigEntry<bool> EnableAntiAliasing;
         public static ConfigEntry<bool> DisableFoliageConfig;
 
-        public static float DefaultResolutionScale = 0;
         public static int DefaultFogQuality = 0;
         public static int DefaultShadowQuality = 0;
         public static int DefaultLODQuality = 0;
+        public static int DefaultTextureQuality = 0;
+        public static float DefaultResolutionScale = 0;
         public static bool DefaultEnableFog = true;
         public static bool DefaultEnablePostProcessing = true;
         public static bool DefaultEnableFoliage = true;
         public static bool DefaultEnableResolutionOverride = true;
-        public static int DefaultTextureQuality = 0;
         public static bool DefaultEnableAntiAliasing = false;
+
+        public static Assembly HDLethal;
 
         private void Awake()
         {
@@ -81,49 +89,89 @@ namespace HDLethalCompanyPatch
             _harmony = new Harmony(HDLCPatchProperties.GUID);
 
             PatchHDLC();
-            //SetupInternalMethods();
             SetupConfig();
         }
 
+        //Remove some HDLethalCompany patches and replace them with new ones
         public static void PatchHDLC()
         {
             Logger.LogInfo("Patching...");
             List<MethodBase> methods = (List<MethodBase>)Harmony.GetAllPatchedMethods();
-            Assembly assembly = null;
 
             foreach (MethodBase method in methods)
             {
                 PatchInfo patchi = PatchManager.GetPatchInfo(method);
 
                 Patch[] prefixPatches = patchi.prefixes;
+                bool roundPostfixSuccess = false;
+                bool startPrefixSuccess = false;
 
                 foreach (var p in prefixPatches)
                 {
-                    if (p.PatchMethod.Name == "RoundPostFix" && p.owner == "HDLethalCompany")
+                    if (p.PatchMethod.Name == "RoundPostFix")
                     {
-                        Logger.LogInfo("Found problem patch from HDLethalCompany RoundPostFix, unpatching it...");
-                        _harmony.Unpatch(method, p.PatchMethod);
-                        assembly = p.PatchMethod.Module.Assembly;
+                        if (p.owner == "HDLethalCompany" || p.owner == "HDLethalCompanyRemake")
+                        {
+                            Logger.LogInfo("Found problem patch from HDLethalCompany RoundPostFix, unpatching it...");
+                            _harmony.Unpatch(method, p.PatchMethod);
+                            HDLethal = p.PatchMethod.Module.Assembly;
+                            roundPostfixSuccess = true;
+                        }
                     }
 
-                    if(p.PatchMethod.Name == "StartPrefix" && p.owner == "HDLethalCompany")
+                    if(p.PatchMethod.Name == "StartPrefix")
                     {
-                        Logger.LogInfo("Unpatching StartPrefix to use custom patch instead");
-                        _harmony.Unpatch(method, p.PatchMethod);
+                        if (p.owner == "HDLethalCompany" || p.owner == "HDLethalCompanyRemake")
+                        {
+                            Logger.LogInfo("Unpatching StartPrefix to use custom patch instead");
+                            _harmony.Unpatch(method, p.PatchMethod);
+                            startPrefixSuccess = true;
+                        }
+                    }
+
+                    if(roundPostfixSuccess)
+                    {
+                        Logger.LogInfo("Patched RoundPostfix success!");
+                    }
+
+                    if(startPrefixSuccess)
+                    {
+                        Logger.LogInfo("Patched StartPrefix success!");
                     }
                 }
             }
-
+            
             _harmony.PatchAll(typeof(HDLCGraphicsPatch));
-            SetupInternalMethods(assembly);
-            Logger.LogInfo("Finished patching");
+
+            try
+            {
+                SetupInternalMethods(HDLethal);
+            }
+            catch(Exception e)
+            {
+                Logger.LogWarning("Failed to patch HDLethalCompany - " + e.ToString());
+                Logger.LogInfo("Attempting to get assembly with a different method...");
+
+                try
+                {
+                    HDLethal = GetAssembly("HDLethalCompany");
+                    SetupInternalMethods(HDLethal);
+                }
+                catch (Exception e2)
+                {
+                    Logger.LogError("Backup method for getting assembly failed! " + e2.ToString());
+                }
+            }
+
+            Logger.LogInfo("Finished patching process");
         }
 
-        public Assembly GetAssembly(string assemblyName)
+        //This might not work due to some mods changing assembly names!!!
+        public static Assembly GetAssembly(string assemblyName)
         {
             foreach(Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
-                if(assembly.GetName().Name.Contains(assemblyName))
+                if(assembly.GetName().Name.Contains(assemblyName) && !assembly.GetName().Name.Contains("HDLethalCompanyPatch"))
                 {
                     return assembly;
                 }
@@ -132,16 +180,16 @@ namespace HDLethalCompanyPatch
             return null;
         }
 
+        //Grab references to HDLethalCompany internal methods to call later
         private static void SetupInternalMethods(Assembly assembly)
         {
             Logger.LogInfo("Creating references to internal methods...");
 
+            //Some mods break assembly names, getting reference elsewhere
             //Assembly assembly = GetAssembly("HDLethalCompany");
 
-            Logger.LogInfo(assembly.GetName().Name);
-
-            HDLCPatchProperties.HDAssembly = assembly;
-            HDLCPatchProperties.GraphicsPatchObj = assembly.CreateInstance("HDLethalCompany.Patch.GraphicsPatch");
+            try { HDLCPatchProperties.HDAssembly = assembly; } catch(Exception e) { Logger.LogError("Failed to get assembly reference"); Logger.LogInfo("Got assembly of " + assembly.GetName().Name); }
+            try { HDLCPatchProperties.GraphicsPatchObj = assembly.CreateInstance("HDLethalCompany.Patch.GraphicsPatch"); } catch (Exception e) { Logger.LogError("Failed to get reference to GraphicsPatch"); }
 
             Type t = HDLCPatchProperties.GraphicsPatchObj.GetType();
             HDLCPatchProperties.GraphicsPatch = t;
@@ -149,11 +197,9 @@ namespace HDLethalCompanyPatch
             HDLCPatchProperties.SetFogQuality = t.GetMethod("SetFogQuality");
             HDLCPatchProperties.RemoveLodFromGameObject = t.GetMethod("RemoveLodFromGameObject");
             HDLCPatchProperties.SetLevelOfDetail = t.GetMethod("SetLevelOfDetail");
-            HDLCPatchProperties.SetAntiAliasing = t.GetMethod("SetAntiAliasing");
             HDLCPatchProperties.SetShadowQuality = t.GetMethod("SetShadowQuality");
             HDLCPatchProperties.ToggleCustomPass = t.GetMethod("ToggleCustomPass");
             HDLCPatchProperties.ToggleVolumetricFog = t.GetMethod("ToggleVolumetricFog");
-            HDLCPatchProperties.SetTextureQuality = t.GetMethod("SetTextureQuality");
 
             HDLCGraphicsPatch.HDAssetBundle = (AssetBundle)HDLCPatchProperties.GraphicsPatch.GetField("assetBundle").GetValue(HDLCPatchProperties.GraphicsPatchObj);
 
@@ -174,10 +220,11 @@ namespace HDLethalCompanyPatch
             EnablePostProcessing = Config.Bind("QualitySettings", "EnablePostProcessing", true, "Turns on a color grading post process effect");
             EnableFoliage = Config.Bind("QualitySettings", "EnableFoliage", true, "Toggles foliage on or off");
             EnableResolutionOverride = Config.Bind("Resolution", "EnableResolutionOverride", true, "Toggles off or on overriding the vanilla resolution");
-            EnableAntiAliasing = Config.Bind("QualitySettings", "EnableAntiAilasing", false, "Toggles anti-aliasing");
+            EnableAntiAliasing = Config.Bind("AntiAliasing", "EnableAntiAilasing", false, "Toggles anti-aliasing");
             DisableFoliageConfig = Config.Bind("Compatability", "DisableFoliageConfig", false, "Disables foliage setting to prevent an issue with certain mods");
+            AASetting = Config.Bind("AntiAliasing", "AAMode", AntiAliasingSetting.FAA, "Changes the type of anti-aliasing used");
 
-
+            //Check if LethalConfig is installed
             Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
 
             for(int i = 0; i < assemblies.Length; i++)
@@ -193,6 +240,7 @@ namespace HDLethalCompanyPatch
             Logger.LogInfo("Config setup complete!");
         }
 
+        //Setup LethalConfig stuff and events to allow runtime changes
         private void SetupLethalConfig()
         {
             LCHDPatchConfigSettings.Setup();
@@ -208,12 +256,14 @@ namespace HDLethalCompanyPatch
             EnableResolutionOverride.SettingChanged += SettingsChanged;
             TextureQuality.SettingChanged += SettingsChanged;
             EnableAntiAliasing.SettingChanged += SettingsChanged;
+            AASetting.SettingChanged += SettingsChanged;
 
-            Logger.LogInfo("Finished setting variables for Lethal Config");
+            Logger.LogInfo("Finished setting variables for Lethal Config and setting up events");
         }
 
         private void SettingsChanged(object sender, EventArgs args)
         {
+            Logger.LogInfo("Detected settings change");
             HDLCGraphicsPatch.SettingsChanged();
         }
     }
