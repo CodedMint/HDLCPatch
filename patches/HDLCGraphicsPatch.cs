@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using System;
+using System.Numerics;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.Rendering.HighDefinition;
@@ -19,17 +20,21 @@ namespace HDLethalCompanyPatch.patches
         public static AssetBundle HDAssetBundle = null;
         public static bool EnableResolutionOverride = true;
         public static float ResolutionScale = 1;
-        public static PlayerControllerB playerRef;
-        public static RenderTexture renderTexture;
-        public static bool SetRenderResolution = true;
+        public static PlayerControllerB PlayerRef;
         public static bool MaskRemoved = false;
         public static int TextureQuality = 3;
         public static bool DisableFoliageSetting = false;
-        //public static int ResolutionWidth = 1920;
-        //public static int ResolutionHeight = 1080;
+        public static bool EnableAA = false;
+        public static bool EnablePatchOverride = false;
+        public static AntiAliasingSetting AAMode = AntiAliasingSetting.FAA;
+        public static int LODQuality;
+        public static bool StartCalled = false;
 
         public static void SettingsChanged()
         {
+            HDLCPatch.Logger.LogInfo("Applying settings changes...");
+
+            //Store values from HDLethalCompany to use later if EnableHDPatchOverrideSettings is false
             if(!HasDefaults)
             {
                 HDLCPatch.DefaultResolutionScale = (float)HDLCPatchProperties.GraphicsPatch.GetField("multiplier").GetValue(HDLCPatchProperties.GraphicsPatchObj);
@@ -46,6 +51,7 @@ namespace HDLethalCompanyPatch.patches
                 HasDefaults = true;
             }
 
+            //Set values
             if (HDLCPatch.EnableHDPatchOverrideSettings.Value)
             {
                 HDLCPatchProperties.GraphicsPatch.GetField("m_setShadowQuality").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.ShadowQuality.Value);
@@ -77,6 +83,7 @@ namespace HDLethalCompanyPatch.patches
                 HDLCPatchProperties.GraphicsPatch.GetField("m_enableAntiAliasing").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultEnableAntiAliasing);
             }
 
+            //Keep a local reference of some values
             FogEnabled = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableFog").GetValue(HDLCPatchProperties.GraphicsPatchObj);
             EnablePostProcessing = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enablePostProcessing").GetValue(HDLCPatchProperties.GraphicsPatchObj);
             EnableFoliage = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableFoliage").GetValue(HDLCPatchProperties.GraphicsPatchObj);
@@ -84,16 +91,21 @@ namespace HDLethalCompanyPatch.patches
             ResolutionScale = (float)HDLCPatchProperties.GraphicsPatch.GetField("multiplier").GetValue(HDLCPatchProperties.GraphicsPatchObj);
             TextureQuality = (int)HDLCPatchProperties.GraphicsPatch.GetField("m_setTextureResolution").GetValue(HDLCPatchProperties.GraphicsPatchObj);
             DisableFoliageSetting = HDLCPatch.DisableFoliageConfig.Value;
+            EnablePatchOverride = HDLCPatch.EnableHDPatchOverrideSettings.Value;
+            AAMode = HDLCPatch.AASetting.Value;
+            LODQuality = (int)HDLCPatchProperties.GraphicsPatch.GetField("m_setLOD").GetValue(HDLCPatchProperties.GraphicsPatchObj);
 
-            if (CanChangeFog)
+            //Make sure the player reference is not null before setting some settings
+            if (PlayerRef != null)
             {
-                HDLCPatchProperties.SetFogQuality.Invoke(HDLCPatchProperties.GraphicsPatchObj, null);
+                SetCameraData(PlayerRef);
+                SetResolution(PlayerRef);
             }
 
-            if (playerRef != null)
-            {
-                SetCameraData(playerRef);
-            }
+            SetFogQuality();
+            SetTextureQuality();
+
+            HDLCPatch.Logger.LogInfo("Settings applied");
         }
 
         public static void SetCameraData(PlayerControllerB player)
@@ -133,15 +145,11 @@ namespace HDLethalCompanyPatch.patches
                 if (cam.gameObject.name == "SecurityCamera" || cam.gameObject.name == "ShipCamera") continue;
 
                 SetAntiAliasing(cam);
-            }
+            }     
+        }
 
-            SetTextureQuality();
-
-            if (CanChangeFog)
-            {
-                HDLCPatchProperties.SetFogQuality.Invoke(HDLCPatchProperties.GraphicsPatchObj, null);
-            }
-
+        public static void SetResolution(PlayerControllerB player)
+        {
             int resolutionWidth = (int)Math.Round(860 * ResolutionScale, 0);
             int resolutionHeight = (int)Math.Round(520 * ResolutionScale, 0);
 
@@ -157,8 +165,14 @@ namespace HDLethalCompanyPatch.patches
             player.gameplayCamera.targetTexture.width = resolutionWidth;
             player.gameplayCamera.targetTexture.height = resolutionHeight;
             player.gameplayCamera.targetTexture.Create();
+        }
 
-            SetTextureQuality();
+        public static void SetFogQuality()
+        {
+            if (CanChangeFog)
+            {
+                HDLCPatchProperties.SetFogQuality.Invoke(HDLCPatchProperties.GraphicsPatchObj, null);
+            }
         }
 
         public static void SetTextureQuality()
@@ -169,9 +183,30 @@ namespace HDLethalCompanyPatch.patches
 
         public static void SetAntiAliasing(HDAdditionalCameraData camera)
         {
-            if (HDLCPatch.EnableAntiAliasing.Value)
+            if(EnableAA)
             {
-                camera.antialiasing = HDAdditionalCameraData.AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+                if (EnablePatchOverride)
+                {
+                    switch (AAMode)
+                    {
+                        case AntiAliasingSetting.FAA:
+                            camera.antialiasing = HDAdditionalCameraData.AntialiasingMode.FastApproximateAntialiasing;
+                            break;
+                        case AntiAliasingSetting.TAA:
+                            camera.antialiasing = HDAdditionalCameraData.AntialiasingMode.TemporalAntialiasing;
+                            break;
+                        case AntiAliasingSetting.SMAA:
+                            camera.antialiasing = HDAdditionalCameraData.AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+                            break;
+                        default:
+                            camera.antialiasing = HDAdditionalCameraData.AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+                            break;
+                    }
+                }
+                else
+                {
+                    camera.antialiasing = HDAdditionalCameraData.AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+                }
             }
             else
             {
@@ -179,29 +214,25 @@ namespace HDLethalCompanyPatch.patches
             }
         }
 
+        [HarmonyPatch(typeof(MenuManager), "SetLoadingScreen")]
+        [HarmonyPrefix]
+        public static void SetLoadingScreenPrefix()
+        {
+            StartCalled = false;
+        }
+
         [HarmonyPatch(typeof(PlayerControllerB), "Start")]
         [HarmonyPrefix]
         public static void StartPrefix(PlayerControllerB __instance)
         {
-            CanChangeFog = true;
-
-            SettingsChanged();
-            SetCameraData(__instance);
-
-            if (EnableResolutionOverride && SetRenderResolution)
+            if (!StartCalled)
             {
-                int resolutionWidth = (int)Math.Round(860 * ResolutionScale, 0);
-                int resolutionHeight = (int)Math.Round(520 * ResolutionScale, 0);
+                CanChangeFog = true;
+                PlayerRef = __instance;
+                StartCalled = true;
 
-                HDLCPatch.Logger.LogInfo("Resolution " + $"{resolutionWidth}x{resolutionHeight} Scale {ResolutionScale}");
-
-                __instance.gameplayCamera.targetTexture.width = resolutionWidth;
-                __instance.gameplayCamera.targetTexture.height = resolutionHeight;
-
-                SetRenderResolution = false;
+                SettingsChanged();
             }
-
-            playerRef = __instance;
         }
 
 
@@ -218,14 +249,9 @@ namespace HDLethalCompanyPatch.patches
         {
             CanChangeFog = true;
 
-            HDLCPatch.Logger.LogInfo("Setting fog");
-            HDLCPatchProperties.SetFogQuality.Invoke(HDLCPatchProperties.GraphicsPatchObj, null);
-            HDLCPatch.Logger.LogInfo("Fog set");
+            SettingsChanged();
 
-            HDLCPatch.Logger.LogInfo("Getting LOD value");
-            int lodQuality = (int)HDLCPatchProperties.GraphicsPatch.GetRuntimeField("m_setLOD").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-
-            if (lodQuality != 0) return;
+            if (LODQuality != 0) return;
             HDLCPatch.Logger.LogInfo("Removing catwalk stairs lod");
             HDLCPatchProperties.RemoveLodFromGameObject.Invoke(HDLCPatchProperties.GraphicsPatchObj, ["CatwalkStairs"]);
         }
