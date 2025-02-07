@@ -6,13 +6,14 @@ namespace HDLethalCompanyPatch.config
 {
     public static class LCHDPatchConfigSettings
     {
-        public static BoolCheckBoxConfigItem EnableHDPatchOverrideSettingsItem;
-        public static FloatSliderConfigItem ResolutionScaleItem;
-        public static EnumDropDownConfigItem<QualitySetting> FogQualityItem;
-        public static BoolCheckBoxConfigItem EnableFogItem;
         public static EnumDropDownConfigItem<QualitySetting> ShadowQualityItem;
         public static EnumDropDownConfigItem<QualitySetting> LODQualityItem;
         public static EnumDropDownConfigItem<QualitySetting> TextureQualityItem;
+        public static EnumDropDownConfigItem<QualitySetting> FogQualityItem;
+        public static EnumDropDownConfigItem<AntiAliasingSetting> AASettingItem;
+        public static FloatSliderConfigItem ResolutionScaleItem;
+        public static BoolCheckBoxConfigItem EnableHDPatchOverrideSettingsItem;
+        public static BoolCheckBoxConfigItem EnableFogItem;
         public static BoolCheckBoxConfigItem EnablePostProcessingItem;
         public static BoolCheckBoxConfigItem EnableFoliageItem;
         public static BoolCheckBoxConfigItem EnableResolutionOverrideItem;
@@ -35,6 +36,7 @@ namespace HDLethalCompanyPatch.config
             EnableAntiAliasingItem = new BoolCheckBoxConfigItem(HDLCPatch.EnableAntiAliasing, false);
             TextureQualityItem = new EnumDropDownConfigItem<QualitySetting>(HDLCPatch.TextureQuality, false);
             DisableFoliageConfigItem = new BoolCheckBoxConfigItem(HDLCPatch.DisableFoliageConfig, true);
+            AASettingItem = new EnumDropDownConfigItem<AntiAliasingSetting>(HDLCPatch.AASetting, false);
 
             LethalConfigManager.AddConfigItem(EnableHDPatchOverrideSettingsItem);
             LethalConfigManager.AddConfigItem(ResolutionScaleItem);
@@ -48,6 +50,7 @@ namespace HDLethalCompanyPatch.config
             LethalConfigManager.AddConfigItem(EnableResolutionOverrideItem);
             LethalConfigManager.AddConfigItem(EnableAntiAliasingItem);
             LethalConfigManager.AddConfigItem(DisableFoliageConfigItem);
+            LethalConfigManager.AddConfigItem(AASettingItem);
         }
     }
 }
