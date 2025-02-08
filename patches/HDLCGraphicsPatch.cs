@@ -1,6 +1,7 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using System.Reflection;
 using UnityEngine;
@@ -29,6 +30,8 @@ namespace HDLethalCompanyPatch.patches
         public static AntiAliasingSetting AAMode = AntiAliasingSetting.FAA;
         public static int LODQuality;
         public static bool StartCalled = false;
+        public static int RenderResolutionWidth = 1;
+        public static int RenderResolutionHeight = 1;
 
         public static void SettingsChanged()
         {
@@ -171,8 +174,49 @@ namespace HDLethalCompanyPatch.patches
 
         public static void SetResolution(PlayerControllerB player)
         {
-            int resolutionWidth = (int)Math.Round(860 * ResolutionScale, 0);
-            int resolutionHeight = (int)Math.Round(520 * ResolutionScale, 0);
+            int resolutionWidth = 860;
+            int resolutionHeight = 520;
+
+            if (HDLCPatch.ResolutionMethod.Value == ResolutionSettingMethod.ScaleSlider)
+            {
+                resolutionWidth = (int)Math.Round(860 * ResolutionScale, 0);
+                resolutionHeight = (int)Math.Round(520 * ResolutionScale, 0);
+            }
+            else if(HDLCPatch.ResolutionMethod.Value == ResolutionSettingMethod.Presets)
+            {
+                switch(HDLCPatch.ResolutionPresetValue.Value)
+                {
+                    case ResolutionPreset.R640x480:
+                        resolutionWidth = 640;
+                        resolutionHeight = 480;
+                        break;
+
+                    case ResolutionPreset.R1280x720:
+                        resolutionHeight = 720;
+                        resolutionWidth = 1280;
+                        break;
+
+                    case ResolutionPreset.R1920x1080:
+                        resolutionWidth = 1920;
+                        resolutionHeight = 1080;
+                        break;
+
+                    case ResolutionPreset.R2560x1440:
+                        resolutionWidth = 2560;
+                        resolutionHeight = 1440;
+                        break;
+
+                    case ResolutionPreset.R3840x2160:
+                        resolutionHeight = 2160;
+                        resolutionWidth = 3840;
+                        break;
+                }
+            }
+            else if(HDLCPatch.ResolutionMethod.Value == ResolutionSettingMethod.Custom)
+            {
+                resolutionWidth = HDLCPatch.ResolutionWidth.Value;
+                resolutionHeight = HDLCPatch.ResolutionHeight.Value;
+            }
 
             if (!EnableResolutionOverride)
             {
@@ -180,12 +224,50 @@ namespace HDLethalCompanyPatch.patches
                 resolutionWidth = 860;
             }
 
-            HDLCPatch.Logger.LogInfo("Resolution " + $"{resolutionWidth}x{resolutionHeight} Scale {ResolutionScale}");
+            RenderResolutionHeight = resolutionHeight;
+            RenderResolutionWidth = resolutionWidth;
+
+            //UnityEngine.Vector2 aspectRatio = GetAspectRatio(resolutionWidth, resolutionHeight);
+            //UnityEngine.Vector2 normalizedRatio = GetNormalizedAspectRatio(resolutionWidth, resolutionHeight);
+
+            //HDLCPatch.Logger.LogInfo("Resolution " + $"{resolutionWidth}x{resolutionHeight} Aspect Ratio: {aspectRatio.x}:{aspectRatio.y}");
 
             player.gameplayCamera.targetTexture.Release();
+            //player.gameplayCamera.rect = new Rect(default, normalizedRatio) { center = new UnityEngine.Vector2(0.5f, 0.5f)};
             player.gameplayCamera.targetTexture.width = resolutionWidth;
             player.gameplayCamera.targetTexture.height = resolutionHeight;
             player.gameplayCamera.targetTexture.Create();
+        }
+
+        public static UnityEngine.Vector2 GetNormalizedAspectRatio(int width, int height)
+        {
+            UnityEngine.Vector2 aspectRatio = GetAspectRatio(width, height);
+            UnityEngine.Vector2 resolution = new UnityEngine.Vector2(width, height);
+
+            return aspectRatio / resolution;
+        }
+
+        public static UnityEngine.Vector2 GetAspectRatio(int width, int height)
+        {
+            int gcd = GetGCD(width, height);
+            return new UnityEngine.Vector2(width / gcd, height / gcd);
+        }
+
+        public static int GetGCD(int a, int b)
+        {
+            while( a != 0 && b != 0 )
+            {
+                if(a > b)
+                {
+                    a %= b;
+                }
+                else
+                {
+                    b %= a;
+                }
+            }
+
+            return a | b;
         }
 
         public static void SetFogQuality()
@@ -232,6 +314,20 @@ namespace HDLethalCompanyPatch.patches
             else
             {
                 camera.antialiasing = HDAdditionalCameraData.AntialiasingMode.None;
+            }
+        }
+
+        [HarmonyPatch(typeof(HUDManager), "UpdateScanNodes")]
+        [HarmonyPostfix]
+        public static void UpdateScanNodesPostfix(PlayerControllerB playerScript, HUDManager __instance, Dictionary<RectTransform, ScanNodeProperties> ___scanNodes)
+        {
+            for(int i = 0; i < __instance.scanElements.Length; i++)
+            {
+                if (___scanNodes.TryGetValue(__instance.scanElements[i], out ScanNodeProperties scanNode))
+                {
+                    UnityEngine.Vector3 elementPos = playerScript.gameplayCamera.WorldToViewportPoint(scanNode.transform.position);
+                    __instance.scanElements[i].anchoredPosition = new UnityEngine.Vector2(-450.65f + 901.3f * elementPos.x, -261.575f + 523.15f * elementPos.y);
+                }   
             }
         }
 

@@ -27,11 +27,28 @@ namespace HDLethalCompanyPatch
         SMAA
     }
 
+    public enum ResolutionSettingMethod
+    {
+        ScaleSlider,
+        Presets,
+        Custom
+    }
+
+    public enum ResolutionPreset
+    {
+        R640x480,
+        R1280x720,
+        R1920x1080,
+        R2560x1440,
+        R3840x2160
+
+    }
+
     public static class HDLCPatchProperties
     {
         public const string Name = "HDLCPatch";
         public const string GUID = "HDLCPatch";
-        public const string Version = "1.1.2";
+        public const string Version = "1.2.0";
 
         public static Assembly HDAssembly;
         public static object GraphicsPatchObj;
@@ -58,7 +75,11 @@ namespace HDLethalCompanyPatch
         public static ConfigEntry<QualitySetting> TextureQuality;
         public static ConfigEntry<QualitySetting> FogQuality;
         public static ConfigEntry<AntiAliasingSetting> AASetting;
+        public static ConfigEntry<ResolutionSettingMethod> ResolutionMethod;
+        public static ConfigEntry<ResolutionPreset> ResolutionPresetValue;
         public static ConfigEntry<float> ResolutionScale;
+        public static ConfigEntry<int> ResolutionWidth;
+        public static ConfigEntry<int> ResolutionHeight;
         public static ConfigEntry<bool> EnableHDPatchOverrideSettings;
         public static ConfigEntry<bool> EnableFog;
         public static ConfigEntry<bool> EnablePostProcessing;
@@ -106,6 +127,7 @@ namespace HDLethalCompanyPatch
                 PatchInfo patchi = PatchManager.GetPatchInfo(method);
 
                 Patch[] prefixPatches = patchi.prefixes;
+                Patch[] postfixPatches = patchi.postfixes;
 
                 foreach (var p in prefixPatches)
                 {
@@ -130,6 +152,19 @@ namespace HDLethalCompanyPatch
                         }
                     }
                 }
+
+                foreach(var p in postfixPatches)
+                {
+                    if (p.PatchMethod.Name == "UpdateScanNodesPostfix")
+                    {
+                        if (p.owner == "HDLethalCompany" || p.owner == "HDLethalCompanyRemake")
+                        {
+                            Logger.LogInfo("Attempting to unpatch HDLethalCompany UpdateScanNodesPostfix");
+                            _harmony.Unpatch(method, p.PatchMethod);
+                        }
+                    }
+                }
+
             }
 
             if (roundPostfixSuccess)
@@ -283,6 +318,10 @@ namespace HDLethalCompanyPatch
             EnableAntiAliasing = Config.Bind("AntiAliasing", "EnableAntiAilasing", false, "Toggles anti-aliasing");
             DisableFoliageConfig = Config.Bind("Compatability", "DisableFoliageConfig", false, "Disables foliage setting to prevent an issue with certain mods");
             AASetting = Config.Bind("AntiAliasing", "AAMode", AntiAliasingSetting.FAA, "Changes the type of anti-aliasing used");
+            ResolutionMethod = Config.Bind("Resolution", "ResolutionMethod", ResolutionSettingMethod.ScaleSlider, "Changes how resolution should be set.");
+            ResolutionPresetValue = Config.Bind("Resolution", "ResolutionPreset", ResolutionPreset.R1920x1080, "If ResolutionMethod is set to Preset, this setting will be used.");
+            ResolutionWidth = Config.Bind("Resolution", "ResolutionWidth", 1920, "If ResolutionMethod is set to Custom, this value will be used for resolution width.");
+            ResolutionHeight = Config.Bind("Resolution", "ResolutionHeight", 1080, "If ResolutionMethod is set to Custom, this value will be used for resolution height.");
 
             //Check if LethalConfig is installed
             Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
@@ -317,6 +356,10 @@ namespace HDLethalCompanyPatch
             TextureQuality.SettingChanged += SettingsChanged;
             EnableAntiAliasing.SettingChanged += SettingsChanged;
             AASetting.SettingChanged += SettingsChanged;
+            ResolutionPresetValue.SettingChanged += SettingsChanged;
+            ResolutionMethod.SettingChanged += SettingsChanged;
+            ResolutionHeight.SettingChanged += SettingsChanged;
+            ResolutionWidth.SettingChanged += SettingsChanged;
 
             Logger.LogInfo("Finished setting variables for Lethal Config and setting up events");
         }
