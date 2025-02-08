@@ -12,7 +12,11 @@ namespace HDLethalCompanyPatch.config
         public static EnumDropDownConfigItem<QualitySetting> TextureQualityItem;
         public static EnumDropDownConfigItem<QualitySetting> FogQualityItem;
         public static EnumDropDownConfigItem<AntiAliasingSetting> AASettingItem;
+        public static EnumDropDownConfigItem<ResolutionSettingMethod> ResolutionMethodItem;
+        public static EnumDropDownConfigItem<ResolutionPreset> ResolutionPresetItem;
         public static FloatSliderConfigItem ResolutionScaleItem;
+        public static IntInputFieldConfigItem ResolutionWidthItem;
+        public static IntInputFieldConfigItem ResolutionHeightItem;
         public static BoolCheckBoxConfigItem EnableHDPatchOverrideSettingsItem;
         public static BoolCheckBoxConfigItem EnableFogItem;
         public static BoolCheckBoxConfigItem EnablePostProcessingItem;
@@ -38,9 +42,18 @@ namespace HDLethalCompanyPatch.config
             TextureQualityItem = new EnumDropDownConfigItem<QualitySetting>(HDLCPatch.TextureQuality, false);
             DisableFoliageConfigItem = new BoolCheckBoxConfigItem(HDLCPatch.DisableFoliageConfig, true);
             AASettingItem = new EnumDropDownConfigItem<AntiAliasingSetting>(HDLCPatch.AASetting, false);
+            ResolutionMethodItem = new EnumDropDownConfigItem<ResolutionSettingMethod>(HDLCPatch.ResolutionMethod, false);
+            ResolutionPresetItem = new EnumDropDownConfigItem<ResolutionPreset>(HDLCPatch.ResolutionPresetValue, false);
+            ResolutionHeightItem = new IntInputFieldConfigItem(HDLCPatch.ResolutionHeight, false);
+            ResolutionWidthItem = new IntInputFieldConfigItem(HDLCPatch.ResolutionWidth, false);
 
             LethalConfigManager.AddConfigItem(EnableHDPatchOverrideSettingsItem);
+            LethalConfigManager.AddConfigItem(EnableResolutionOverrideItem);
+            LethalConfigManager.AddConfigItem(ResolutionMethodItem);
             LethalConfigManager.AddConfigItem(ResolutionScaleItem);
+            LethalConfigManager.AddConfigItem(ResolutionPresetItem);
+            LethalConfigManager.AddConfigItem(ResolutionWidthItem);
+            LethalConfigManager.AddConfigItem(ResolutionHeightItem);
             LethalConfigManager.AddConfigItem(FogQualityItem);
             LethalConfigManager.AddConfigItem(ShadowQualityItem);
             LethalConfigManager.AddConfigItem(LODQualityItem);
@@ -48,7 +61,6 @@ namespace HDLethalCompanyPatch.config
             LethalConfigManager.AddConfigItem(EnablePostProcessingItem);
             LethalConfigManager.AddConfigItem(EnableFogItem);
             LethalConfigManager.AddConfigItem(EnableFoliageItem);
-            LethalConfigManager.AddConfigItem(EnableResolutionOverrideItem);
             LethalConfigManager.AddConfigItem(EnableAntiAliasingItem);
             LethalConfigManager.AddConfigItem(DisableFoliageConfigItem);
             LethalConfigManager.AddConfigItem(AASettingItem);
