@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
 using UnityEngine.UI;
 
@@ -108,7 +109,6 @@ namespace HDLethalCompanyPatch.patches
                     try { SetResolution(PlayerRef); } catch(Exception e) { HDLCPatch.Logger.LogError($"Failed to set resolution\n{e.ToString()}"); }
                 }
 
-                try { SetFogQuality(); } catch(Exception e) { HDLCPatch.Logger.LogError($"Failed to set fog settings\n{e.ToString()}"); }
                 try { SetTextureQuality(); } catch(Exception e) { HDLCPatch.Logger.LogError($"Failed to set texture quality\n{e.ToString()}"); }
 
                 HDLCPatch.Logger.LogInfo("Settings applied");
@@ -143,9 +143,10 @@ namespace HDLethalCompanyPatch.patches
 
                 cam.customRenderingSettings = true;
 
-                HDLCPatchProperties.ToggleCustomPass.Invoke(HDLCPatchProperties.GraphicsPatchObj, [cam, EnablePostProcessing]);
+                SetFogQuality(cam);
+                TogglePostProcessing(cam);
                 HDLCPatchProperties.SetLevelOfDetail.Invoke(HDLCPatchProperties.GraphicsPatchObj, [cam]);
-                HDLCPatchProperties.ToggleVolumetricFog.Invoke(HDLCPatchProperties.GraphicsPatchObj, [cam, FogEnabled]);
+                HDLCPatchProperties.SetShadowQuality.Invoke(HDLCPatchProperties.GraphicsPatchObj, [HDAssetBundle, cam]);
 
                 if (!DisableFoliageSetting)
                 {
@@ -164,8 +165,6 @@ namespace HDLethalCompanyPatch.patches
                         MaskRemoved = false;
                     }
                 }
-
-                HDLCPatchProperties.SetShadowQuality.Invoke(HDLCPatchProperties.GraphicsPatchObj, [HDAssetBundle, cam]);
 
                 if (cam.gameObject.name == "SecurityCamera" || cam.gameObject.name == "ShipCamera") continue;
 
@@ -271,11 +270,61 @@ namespace HDLethalCompanyPatch.patches
             return a | b;
         }
 
-        public static void SetFogQuality()
+        public static void TogglePostProcessing(HDAdditionalCameraData camera)
         {
-            if (CanChangeFog)
+            camera.renderingPathCustomFrameSettingsOverrideMask.mask[(int)FrameSettingsField.CustomPass] = true;
+            camera.renderingPathCustomFrameSettings.SetEnabled(FrameSettingsField.CustomPass, HDLCPatch.EnablePostProcessing.Value);
+        }
+
+        public static void SetFogQuality(HDAdditionalCameraData camera)
+        {
+            if (!CanChangeFog)
+                return;
+
+            camera.renderingPathCustomFrameSettingsOverrideMask.mask[(int)FrameSettingsField.Volumetrics] = true;
+            camera.renderingPathCustomFrameSettings.SetEnabled(FrameSettingsField.Volumetrics, HDLCPatch.EnableFog.Value);
+
+            try
             {
-                HDLCPatchProperties.SetFogQuality.Invoke(HDLCPatchProperties.GraphicsPatchObj, null);
+                Volume[] volumes = UnityEngine.Object.FindObjectsByType<Volume>(FindObjectsSortMode.None);
+                BoolParameter fogEnabled = new BoolParameter(HDLCPatch.EnableFog.Value);
+
+                for (int i = 0; i < volumes.Length; i++)
+                {
+                    if (volumes[i].sharedProfile.TryGet<Fog>(out Fog fog))
+                    {
+                        fog.enabled = fogEnabled;
+
+                        fog.quality.Override(3);
+
+                        switch(HDLCPatch.FogQuality.Value)
+                        {
+                            case QualitySetting.VeryLow:
+                                fog.volumetricFogBudget = 0.025f;
+                                fog.resolutionDepthRatio = 0.2f;
+                                break;
+
+                            case QualitySetting.Low:
+                                fog.volumetricFogBudget = 0.05f;
+                                fog.resolutionDepthRatio = 0.5f;
+                                break;
+
+                            case QualitySetting.Medium:
+                                fog.volumetricFogBudget = 0.65f;
+                                fog.resolutionDepthRatio = 0.6f;
+                                break;
+
+                            case QualitySetting.High:
+                                fog.volumetricFogBudget = 0.75f;
+                                fog.resolutionDepthRatio = 0.7f;
+                                break;
+                        }
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                HDLCPatch.Logger.LogError($"Failed to set fog!\n{e.ToString()}");
             }
         }
 
@@ -320,7 +369,7 @@ namespace HDLethalCompanyPatch.patches
 
         [HarmonyPatch(typeof(HUDManager), nameof(HUDManager.GetTextureFromImage))]
         [HarmonyPostfix]
-        public static Texture2D GetTextureFromImagePostifx(Texture2D __result)
+        public static Texture2D GetTextureFromImagePostfix(Texture2D __result)
         {
             __result.ignoreMipmapLimit = true;
             return __result;
