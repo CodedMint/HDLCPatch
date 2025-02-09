@@ -6,6 +6,7 @@ using System.Numerics;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.Rendering.HighDefinition;
+using UnityEngine.UI;
 
 
 namespace HDLethalCompanyPatch.patches
@@ -315,6 +316,14 @@ namespace HDLethalCompanyPatch.patches
             {
                 camera.antialiasing = HDAdditionalCameraData.AntialiasingMode.None;
             }
+        }
+
+        [HarmonyPatch(typeof(HUDManager), nameof(HUDManager.GetTextureFromImage))]
+        [HarmonyPostfix]
+        public static Texture2D GetTextureFromImagePostifx(Texture2D __result)
+        {
+            __result.ignoreMipmapLimit = true;
+            return __result;
         }
 
         [HarmonyPatch(typeof(HUDManager), "UpdateScanNodes")]
