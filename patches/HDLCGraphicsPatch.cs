@@ -100,6 +100,36 @@ namespace HDLethalCompanyPatch.patches
             }     
         }
 
+        public static void SetLODQuality(HDAdditionalCameraData camera)
+        {
+            camera.renderingPathCustomFrameSettingsOverrideMask.mask[(int)FrameSettingsField.LODBiasMode] = true;
+            camera.renderingPathCustomFrameSettingsOverrideMask.mask[(int)FrameSettingsField.LODBias] = true;
+
+            camera.renderingPathCustomFrameSettings.SetEnabled(FrameSettingsField.LODBiasMode, true);
+            camera.renderingPathCustomFrameSettings.SetEnabled(FrameSettingsField.LODBias, true);
+
+            camera.renderingPathCustomFrameSettings.lodBiasMode = LODBiasMode.OverrideQualitySettings;
+            
+            switch(HDLCPatch.LODQuality.Value)
+            {
+                case QualitySetting.VeryLow:
+                    camera.renderingPathCustomFrameSettings.lodBias = 0.6f;
+                    break;
+
+                case QualitySetting.Low:
+                    camera.renderingPathCustomFrameSettings.lodBias = 0.9f;
+                    break;
+
+                case QualitySetting.Medium:
+                    camera.renderingPathCustomFrameSettings.lodBias = 1.6f;
+                    break;
+
+                case QualitySetting.High:
+                    camera.renderingPathCustomFrameSettings.lodBias = 2.3f;
+                    break;
+            }
+        }
+
         public static void SetResolution(PlayerControllerB player)
         {
             int resolutionWidth = 860;
