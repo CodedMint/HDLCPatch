@@ -12,6 +12,23 @@ using UnityEngine;
 
 namespace HDLethalCompanyPatch
 {
+    public enum FogSettingMethod
+    {
+        Sliders,
+        Presets
+    }
+
+    public enum FogQualitySetting
+    {
+        Minimal,
+        VeryLow,
+        Low,
+        Medium,
+        High,
+        VeryHigh,
+        Extreme
+    }
+
     public enum QualitySetting
     {
         VeryLow,
@@ -41,24 +58,19 @@ namespace HDLethalCompanyPatch
         R1920x1080,
         R2560x1440,
         R3840x2160
-
     }
 
     public static class HDLCPatchProperties
     {
         public const string Name = "HDLCPatch";
         public const string GUID = "HDLCPatch";
-        public const string Version = "1.2.1";
+        public const string Version = "1.3.0";
 
         public static Assembly HDAssembly;
         public static object GraphicsPatchObj;
         public static Type GraphicsPatch;
 
-        public static MethodInfo SetFogQuality;
         public static MethodInfo RemoveLodFromGameObject;
-        public static MethodInfo ToggleCustomPass;
-        public static MethodInfo SetLevelOfDetail;
-        public static MethodInfo ToggleVolumetricFog;
         public static MethodInfo SetShadowQuality;
     }
 
@@ -73,31 +85,22 @@ namespace HDLethalCompanyPatch
         public static ConfigEntry<QualitySetting> ShadowQuality;
         public static ConfigEntry<QualitySetting> LODQuality;
         public static ConfigEntry<QualitySetting> TextureQuality;
-        public static ConfigEntry<QualitySetting> FogQuality;
+        public static ConfigEntry<FogQualitySetting> FogQuality;
         public static ConfigEntry<AntiAliasingSetting> AASetting;
         public static ConfigEntry<ResolutionSettingMethod> ResolutionMethod;
         public static ConfigEntry<ResolutionPreset> ResolutionPresetValue;
+        public static ConfigEntry<FogSettingMethod> FogQualityMethod;
+        public static ConfigEntry<float> VolumetricFogBudget;
+        public static ConfigEntry<float> FogResolutionDepthRatio;
         public static ConfigEntry<float> ResolutionScale;
         public static ConfigEntry<int> ResolutionWidth;
         public static ConfigEntry<int> ResolutionHeight;
-        public static ConfigEntry<bool> EnableHDPatchOverrideSettings;
         public static ConfigEntry<bool> EnableFog;
         public static ConfigEntry<bool> EnablePostProcessing;
         public static ConfigEntry<bool> EnableFoliage;
         public static ConfigEntry<bool> EnableResolutionOverride;
         public static ConfigEntry<bool> EnableAntiAliasing;
         public static ConfigEntry<bool> DisableFoliageConfig;
-
-        public static int DefaultFogQuality = 0;
-        public static int DefaultShadowQuality = 0;
-        public static int DefaultLODQuality = 0;
-        public static int DefaultTextureQuality = 0;
-        public static float DefaultResolutionScale = 0;
-        public static bool DefaultEnableFog = true;
-        public static bool DefaultEnablePostProcessing = true;
-        public static bool DefaultEnableFoliage = true;
-        public static bool DefaultEnableResolutionOverride = true;
-        public static bool DefaultEnableAntiAliasing = false;
 
         public static Assembly HDLethal;
 
@@ -280,21 +283,14 @@ namespace HDLethalCompanyPatch
         {
             Logger.LogInfo("Creating references to internal methods...");
 
-            //Some mods break assembly names, getting reference elsewhere
-            //Assembly assembly = GetAssembly("HDLethalCompany");
-
             try { HDLCPatchProperties.HDAssembly = assembly; Logger.LogInfo("Got assembly of " + assembly.GetName().Name); } catch(Exception e) { Logger.LogError("Failed to get assembly reference\n" + e.ToString()); }
             try { HDLCPatchProperties.GraphicsPatchObj = assembly.CreateInstance("HDLethalCompany.Patch.GraphicsPatch"); } catch (Exception e) { Logger.LogError("Failed to get reference to GraphicsPatch\n" + e.ToString()); }
 
             Type t = HDLCPatchProperties.GraphicsPatchObj.GetType();
             HDLCPatchProperties.GraphicsPatch = t;
 
-            HDLCPatchProperties.SetFogQuality = t.GetMethod("SetFogQuality");
             HDLCPatchProperties.RemoveLodFromGameObject = t.GetMethod("RemoveLodFromGameObject");
-            HDLCPatchProperties.SetLevelOfDetail = t.GetMethod("SetLevelOfDetail");
             HDLCPatchProperties.SetShadowQuality = t.GetMethod("SetShadowQuality");
-            HDLCPatchProperties.ToggleCustomPass = t.GetMethod("ToggleCustomPass");
-            HDLCPatchProperties.ToggleVolumetricFog = t.GetMethod("ToggleVolumetricFog");
 
             HDLCGraphicsPatch.HDAssetBundle = (AssetBundle)HDLCPatchProperties.GraphicsPatch.GetField("assetBundle").GetValue(HDLCPatchProperties.GraphicsPatchObj);
 
@@ -305,11 +301,13 @@ namespace HDLethalCompanyPatch
         {
             Logger.LogInfo("Setting up config...");
 
-            EnableHDPatchOverrideSettings = Config.Bind("Override", "EnableHDPatchOverrideSettings", false, "Toggle to true to use settings from HDLCPatch instead of HDLethalCompany. This allows updating settings in game without restart.");
             ResolutionScale = Config.Bind("Resolution", "ResolutionScale", 2.233f, "Resolution Scale Multiplier | 1.000 = 860x520p | 2.233 =~ 1920x1080p | 2.977 = 2560x1440p | 4.465 = 3840x2060p");
             EnableFog = Config.Bind("QualitySettings", "EnableFog", true, "Toggles fog on or off");
-            FogQuality = Config.Bind("QualitySettings", "FogQuality", QualitySetting.Low, "Adjusts the fog quality. Lower values will reduce GPU load");
-            ShadowQuality = Config.Bind("QualitySettings", "ShadowQuality", QualitySetting.High, "Asjusts the shadow resolution. Lower values reduce GPU load");
+            FogQualityMethod = Config.Bind("QualitySettings", "FogQualitySettingMethod", FogSettingMethod.Presets, "Changes the method used to set fog quality.");
+            FogQuality = Config.Bind("QualitySettings", "FogQuality", FogQualitySetting.Low, "Adjusts the fog quality. Lower values will reduce GPU load.\nFogQualitySettingMethod must be set to Presets.");
+            FogResolutionDepthRatio = Config.Bind("QualitySettings", "FogResolutionDepthRatio", 0.3f, "Affects resolution of fog.\nFogQualitySettingMethod must be set to Sliders.");
+            VolumetricFogBudget = Config.Bind("QualitySettings", "VolumetricFogBudget", 0.3f, "Affects volumetric density of fog.\nFogQualitySettingMethod must be set to Sliders.");
+            ShadowQuality = Config.Bind("QualitySettings", "ShadowQuality", QualitySetting.High, "Adjusts the shadow resolution. Lower values reduce GPU load");
             LODQuality = Config.Bind("QualitySettings", "LODQuality", QualitySetting.High, "Adjusts the lod distance. Low values reduce GPU load.");
             TextureQuality = Config.Bind("QualitySettings", "TextureQuality", QualitySetting.High, "Changes texture resolution");
             EnablePostProcessing = Config.Bind("QualitySettings", "EnablePostProcessing", true, "Turns on a color grading post process effect");
@@ -344,7 +342,6 @@ namespace HDLethalCompanyPatch
         {
             LCHDPatchConfigSettings.Setup();
 
-            EnableHDPatchOverrideSettings.SettingChanged += SettingsChanged;
             ResolutionScale.SettingChanged += SettingsChanged;
             FogQuality.SettingChanged += SettingsChanged;
             EnableFog.SettingChanged += SettingsChanged;
@@ -360,6 +357,9 @@ namespace HDLethalCompanyPatch
             ResolutionMethod.SettingChanged += SettingsChanged;
             ResolutionHeight.SettingChanged += SettingsChanged;
             ResolutionWidth.SettingChanged += SettingsChanged;
+            FogQualityMethod.SettingChanged += SettingsChanged;
+            FogResolutionDepthRatio.SettingChanged += SettingsChanged;
+            VolumetricFogBudget.SettingChanged += SettingsChanged;
 
             Logger.LogInfo("Finished setting variables for Lethal Config and setting up events");
         }

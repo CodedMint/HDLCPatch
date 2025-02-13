@@ -14,23 +14,11 @@ namespace HDLethalCompanyPatch.patches
 {
     internal class HDLCGraphicsPatch
     {
-        public static bool HasDefaults = false;
         public static bool CanChangeFog = false;
-        public static bool FogEnabled = true;
-        public static bool EnablePostProcessing = true;
-        public static bool EnableFoliage = true;
         public static LayerMask DefaultCullingMask = 0;
         public static AssetBundle HDAssetBundle = null;
-        public static bool EnableResolutionOverride = true;
-        public static float ResolutionScale = 1;
         public static PlayerControllerB PlayerRef;
         public static bool MaskRemoved = false;
-        public static int TextureQuality = 3;
-        public static bool DisableFoliageSetting = false;
-        public static bool EnableAA = false;
-        public static bool EnablePatchOverride = false;
-        public static AntiAliasingSetting AAMode = AntiAliasingSetting.FAA;
-        public static int LODQuality;
         public static bool StartCalled = false;
         public static int RenderResolutionWidth = 1;
         public static int RenderResolutionHeight = 1;
@@ -40,67 +28,6 @@ namespace HDLethalCompanyPatch.patches
             try
             {
                 HDLCPatch.Logger.LogInfo("Applying settings changes...");
-
-                //Store values from HDLethalCompany to use later if EnableHDPatchOverrideSettings is false
-                if (!HasDefaults)
-                {
-                    HDLCPatch.DefaultResolutionScale = (float)HDLCPatchProperties.GraphicsPatch.GetField("multiplier").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                    HDLCPatch.DefaultFogQuality = (int)HDLCPatchProperties.GraphicsPatch.GetField("m_setFogQuality").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                    HDLCPatch.DefaultLODQuality = (int)HDLCPatchProperties.GraphicsPatch.GetField("m_setLOD").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                    HDLCPatch.DefaultShadowQuality = (int)HDLCPatchProperties.GraphicsPatch.GetField("m_setShadowQuality").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                    HDLCPatch.DefaultEnableFog = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableFog").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                    HDLCPatch.DefaultEnablePostProcessing = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enablePostProcessing").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                    HDLCPatch.DefaultEnableFoliage = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableFoliage").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                    HDLCPatch.DefaultEnableResolutionOverride = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableResolutionFix").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                    HDLCPatch.DefaultEnableAntiAliasing = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableAntiAliasing").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                    HDLCPatch.DefaultTextureQuality = (int)HDLCPatchProperties.GraphicsPatch.GetField("m_setTextureResolution").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-
-                    HasDefaults = true;
-                }
-
-                //Set values
-                if (HDLCPatch.EnableHDPatchOverrideSettings.Value)
-                {
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_setShadowQuality").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.ShadowQuality.Value);
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_setLOD").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.LODQuality.Value);
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_setFogQuality").SetValue(HDLCPatchProperties.GraphicsPatchObj, (int)HDLCPatch.FogQuality.Value);
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_widthResolution").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.ResolutionScale.Value * 860);
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_heightResolution").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.ResolutionScale.Value * 520);
-                    HDLCPatchProperties.GraphicsPatch.GetField("multiplier").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.ResolutionScale.Value);
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_enableFog").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.EnableFog.Value);
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_enablePostProcessing").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.EnablePostProcessing.Value);
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_enableFoliage").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.EnableFoliage.Value);
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_enableResolutionFix").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.EnableResolutionOverride.Value);
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_setTextureResolution").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.TextureQuality.Value);
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_enableAntiAliasing").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.EnableAntiAliasing.Value);
-                }
-                else
-                {
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_setShadowQuality").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultShadowQuality);
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_setLOD").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultLODQuality);
-                    HDLCPatchProperties.GraphicsPatch.GetField("multiplier").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultResolutionScale);
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_widthResolution").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultResolutionScale * 860);
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_heightResolution").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultResolutionScale * 520);
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_setFogQuality").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultFogQuality);
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_enableFog").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultEnableFog);
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_enablePostProcessing").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultEnablePostProcessing);
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_enableFoliage").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultEnableFoliage);
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_enableResolutionFix").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultEnableResolutionOverride);
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_setTextureResolution").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultTextureQuality);
-                    HDLCPatchProperties.GraphicsPatch.GetField("m_enableAntiAliasing").SetValue(HDLCPatchProperties.GraphicsPatchObj, HDLCPatch.DefaultEnableAntiAliasing);
-                }
-
-                //Keep a local reference of some values
-                FogEnabled = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableFog").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                EnablePostProcessing = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enablePostProcessing").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                EnableFoliage = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableFoliage").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                EnableResolutionOverride = (bool)HDLCPatchProperties.GraphicsPatch.GetField("m_enableResolutionFix").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                ResolutionScale = (float)HDLCPatchProperties.GraphicsPatch.GetField("multiplier").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                TextureQuality = (int)HDLCPatchProperties.GraphicsPatch.GetField("m_setTextureResolution").GetValue(HDLCPatchProperties.GraphicsPatchObj);
-                DisableFoliageSetting = HDLCPatch.DisableFoliageConfig.Value;
-                EnablePatchOverride = HDLCPatch.EnableHDPatchOverrideSettings.Value;
-                AAMode = HDLCPatch.AASetting.Value;
-                LODQuality = (int)HDLCPatchProperties.GraphicsPatch.GetField("m_setLOD").GetValue(HDLCPatchProperties.GraphicsPatchObj);
 
                 //Make sure the player reference is not null before setting some settings
                 if (PlayerRef != null)
@@ -147,10 +74,11 @@ namespace HDLethalCompanyPatch.patches
                 TogglePostProcessing(cam);
                 HDLCPatchProperties.SetLevelOfDetail.Invoke(HDLCPatchProperties.GraphicsPatchObj, [cam]);
                 HDLCPatchProperties.SetShadowQuality.Invoke(HDLCPatchProperties.GraphicsPatchObj, [HDAssetBundle, cam]);
+                SetShadowQuality();
 
-                if (!DisableFoliageSetting)
+                if (!HDLCPatch.DisableFoliageConfig.Value)
                 {
-                    if (!EnableFoliage)
+                    if (!HDLCPatch.EnableFoliage.Value)
                     {
                         LayerMask mask = cam.GetComponent<Camera>().cullingMask;
                         mask &= ~(0x1 << 10);
@@ -179,8 +107,8 @@ namespace HDLethalCompanyPatch.patches
 
             if (HDLCPatch.ResolutionMethod.Value == ResolutionSettingMethod.ScaleSlider)
             {
-                resolutionWidth = (int)Math.Round(860 * ResolutionScale, 0);
-                resolutionHeight = (int)Math.Round(520 * ResolutionScale, 0);
+                resolutionWidth = (int)Math.Round(860 * HDLCPatch.ResolutionScale.Value, 0);
+                resolutionHeight = (int)Math.Round(520 * HDLCPatch.ResolutionScale.Value, 0);
             }
             else if(HDLCPatch.ResolutionMethod.Value == ResolutionSettingMethod.Presets)
             {
@@ -218,7 +146,7 @@ namespace HDLethalCompanyPatch.patches
                 resolutionHeight = HDLCPatch.ResolutionHeight.Value;
             }
 
-            if (!EnableResolutionOverride)
+            if (!HDLCPatch.EnableResolutionOverride.Value)
             {
                 resolutionHeight = 520;
                 resolutionWidth = 860;
@@ -270,6 +198,32 @@ namespace HDLethalCompanyPatch.patches
             return a | b;
         }
 
+        public static void SetShadowQuality()
+        {
+            HDRenderPipelineAsset pipelineAsset = (HDRenderPipelineAsset)QualitySettings.renderPipeline;
+            RenderPipelineSettings pipelineSettings = pipelineAsset.currentPlatformRenderPipelineSettings;
+            HDShadowInitParameters shadow = pipelineSettings.hdShadowInitParams;
+
+            HDLCPatch.Logger.LogInfo("----Shadow Settings----\n" +
+                $"AllowDirectionalMixedCachedShadows: {shadow.allowDirectionalMixedCachedShadows}\n" +
+                $"AreaShadowFilteringQuality: {shadow.areaShadowFilteringQuality}\n" +
+                $"DirectionalShadowsDepthBits: {shadow.directionalShadowsDepthBits}\n" +
+                $"MaxAreaShadowMapResolution: {shadow.maxAreaShadowMapResolution}\n" +
+                $"MaxDirectionalShadowMapResolution: {shadow.maxDirectionalShadowMapResolution}\n" +
+                $"MaxPunctualShadowMapResolution: {shadow.maxPunctualShadowMapResolution}\n" +
+                $"ShadowResolutionDirectional: {shadow.shadowResolutionDirectional}\n" +
+                $"MaxShadowRequests: {shadow.maxShadowRequests}\n" +
+                $"ScreenSpaceShadowBufferFormat: {shadow.screenSpaceShadowBufferFormat}\n" +
+                $"SupportScreenSpaceShadows: {shadow.supportScreenSpaceShadows}\n" +
+                $"ShadowResolutionPunctual: {shadow.shadowResolutionPunctual[0]},{shadow.shadowResolutionPunctual[1]},{shadow.shadowResolutionPunctual[2]},{shadow.shadowResolutionPunctual[3]}\n" +
+                $"ShadowResolutionArea: {shadow.shadowResolutionArea}\n" +
+                $"CachedPunctualLightShadowAtlas: {shadow.cachedPunctualLightShadowAtlas}\n" +
+                $"CachedAreaLightShadowAtlas: {shadow.cachedAreaLightShadowAtlas}\n" +
+                $"AreaLightShadowAtlas.ShadowAtlasResolution: {shadow.areaLightShadowAtlas.shadowAtlasResolution}\n" +
+                $"AreaLightShadowAtlas.UseDynamicViewportRescale: {shadow.areaLightShadowAtlas.useDynamicViewportRescale}\n" +
+                $"-----------------------");
+        }
+
         public static void TogglePostProcessing(HDAdditionalCameraData camera)
         {
             camera.renderingPathCustomFrameSettingsOverrideMask.mask[(int)FrameSettingsField.CustomPass] = true;
@@ -297,30 +251,48 @@ namespace HDLethalCompanyPatch.patches
 
                         fog.quality.Override(3);
 
-                        switch(HDLCPatch.FogQuality.Value)
+                        if (HDLCPatch.FogQualityMethod.Value == FogSettingMethod.Presets)
                         {
-                            case QualitySetting.VeryLow:
-                                fog.volumetricFogBudget = 0.025f;
-                                fog.resolutionDepthRatio = 0.2f;
-                                break;
+                            switch (HDLCPatch.FogQuality.Value)
+                            {
+                                case FogQualitySetting.Minimal:
+                                    fog.volumetricFogBudget = 0.01f;
+                                    fog.resolutionDepthRatio = 0.1f;
+                                    break;
+                                case FogQualitySetting.VeryLow:
+                                    fog.volumetricFogBudget = 0.025f;
+                                    fog.resolutionDepthRatio = 0.2f;
+                                    break;
 
-                            case QualitySetting.Low:
-                                fog.volumetricFogBudget = 0.05f;
-                                fog.resolutionDepthRatio = 0.5f;
-                                break;
+                                case FogQualitySetting.Low:
+                                    fog.volumetricFogBudget = 0.1f;
+                                    fog.resolutionDepthRatio = 0.45f;
+                                    break;
 
-                            case QualitySetting.Medium:
-                                fog.volumetricFogBudget = 0.65f;
-                                fog.resolutionDepthRatio = 0.6f;
-                                break;
+                                case FogQualitySetting.Medium:
+                                    fog.volumetricFogBudget = 0.35f;
+                                    fog.resolutionDepthRatio = 0.6f;
+                                    break;
 
-                            case QualitySetting.High:
-                                fog.volumetricFogBudget = 0.75f;
-                                fog.resolutionDepthRatio = 0.7f;
-                                break;
+                                case FogQualitySetting.High:
+                                    fog.volumetricFogBudget = 0.55f;
+                                    fog.resolutionDepthRatio = 0.7f;
+                                    break;
+                                case FogQualitySetting.Extreme:
+                                    fog.volumetricFogBudget = 0.75f;
+                                    fog.resolutionDepthRatio = 0.8f;
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            fog.volumetricFogBudget = HDLCPatch.VolumetricFogBudget.Value;
+                            fog.resolutionDepthRatio = HDLCPatch.FogResolutionDepthRatio.Value;
                         }
                     }
+
                 }
+
             }
             catch(Exception e)
             {
@@ -330,17 +302,15 @@ namespace HDLethalCompanyPatch.patches
 
         public static void SetTextureQuality()
         {
-            int quality = 3 - TextureQuality;
+            int quality = 3 - (int)HDLCPatch.TextureQuality.Value;
             QualitySettings.globalTextureMipmapLimit = quality;
         }
 
         public static void SetAntiAliasing(HDAdditionalCameraData camera)
         {
-            if(EnableAA)
+            if(HDLCPatch.EnableAntiAliasing.Value)
             {
-                if (EnablePatchOverride)
-                {
-                    switch (AAMode)
+                    switch (HDLCPatch.AASetting.Value)
                     {
                         case AntiAliasingSetting.FAA:
                             camera.antialiasing = HDAdditionalCameraData.AntialiasingMode.FastApproximateAntialiasing;
@@ -355,11 +325,6 @@ namespace HDLethalCompanyPatch.patches
                             camera.antialiasing = HDAdditionalCameraData.AntialiasingMode.SubpixelMorphologicalAntiAliasing;
                             break;
                     }
-                }
-                else
-                {
-                    camera.antialiasing = HDAdditionalCameraData.AntialiasingMode.SubpixelMorphologicalAntiAliasing;
-                }
             }
             else
             {
@@ -426,7 +391,7 @@ namespace HDLethalCompanyPatch.patches
 
             SettingsChanged();
 
-            if (LODQuality != 0) return;
+            if (HDLCPatch.LODQuality.Value != 0) return;
             HDLCPatch.Logger.LogInfo("Removing catwalk stairs lod");
             HDLCPatchProperties.RemoveLodFromGameObject.Invoke(HDLCPatchProperties.GraphicsPatchObj, ["CatwalkStairs"]);
         }

@@ -10,14 +10,16 @@ namespace HDLethalCompanyPatch.config
         public static EnumDropDownConfigItem<QualitySetting> ShadowQualityItem;
         public static EnumDropDownConfigItem<QualitySetting> LODQualityItem;
         public static EnumDropDownConfigItem<QualitySetting> TextureQualityItem;
-        public static EnumDropDownConfigItem<QualitySetting> FogQualityItem;
+        public static EnumDropDownConfigItem<FogQualitySetting> FogQualityItem;
         public static EnumDropDownConfigItem<AntiAliasingSetting> AASettingItem;
         public static EnumDropDownConfigItem<ResolutionSettingMethod> ResolutionMethodItem;
         public static EnumDropDownConfigItem<ResolutionPreset> ResolutionPresetItem;
+        public static EnumDropDownConfigItem<FogSettingMethod> FogSettingMethodItem;
         public static FloatSliderConfigItem ResolutionScaleItem;
+        public static FloatSliderConfigItem VolumetricFogBudgetItem;
+        public static FloatSliderConfigItem FogResolutionDepthRatioItem;
         public static IntInputFieldConfigItem ResolutionWidthItem;
         public static IntInputFieldConfigItem ResolutionHeightItem;
-        public static BoolCheckBoxConfigItem EnableHDPatchOverrideSettingsItem;
         public static BoolCheckBoxConfigItem EnableFogItem;
         public static BoolCheckBoxConfigItem EnablePostProcessingItem;
         public static BoolCheckBoxConfigItem EnableFoliageItem;
@@ -29,10 +31,12 @@ namespace HDLethalCompanyPatch.config
         {
             LethalConfigManager.SetModDescription("A patch mod for HDLethalCompany that also includes runtime configs through LethalConfig");
 
-            EnableHDPatchOverrideSettingsItem = new BoolCheckBoxConfigItem(HDLCPatch.EnableHDPatchOverrideSettings, false);
             ResolutionScaleItem = new FloatSliderConfigItem(HDLCPatch.ResolutionScale, new FloatSliderOptions { Max = 4.465f, Min = 0.25f, RequiresRestart = false });
             EnableFogItem = new BoolCheckBoxConfigItem(HDLCPatch.EnableFog, false);
-            FogQualityItem = new EnumDropDownConfigItem<QualitySetting>(HDLCPatch.FogQuality, false);
+            FogSettingMethodItem = new EnumDropDownConfigItem<FogSettingMethod>(HDLCPatch.FogQualityMethod, false);
+            FogQualityItem = new EnumDropDownConfigItem<FogQualitySetting>(HDLCPatch.FogQuality, false);
+            FogResolutionDepthRatioItem = new FloatSliderConfigItem(HDLCPatch.FogResolutionDepthRatio, new FloatSliderOptions { Max = 1.00f, Min = 0.01f, RequiresRestart = false });
+            VolumetricFogBudgetItem = new FloatSliderConfigItem(HDLCPatch.VolumetricFogBudget, new FloatSliderOptions { Min = 0.01f, Max = 1.00f, RequiresRestart = false });
             ShadowQualityItem = new EnumDropDownConfigItem<QualitySetting>(HDLCPatch.ShadowQuality, false);
             LODQualityItem = new EnumDropDownConfigItem<QualitySetting>(HDLCPatch.LODQuality, false);
             EnablePostProcessingItem = new BoolCheckBoxConfigItem(HDLCPatch.EnablePostProcessing, false);
@@ -47,14 +51,16 @@ namespace HDLethalCompanyPatch.config
             ResolutionHeightItem = new IntInputFieldConfigItem(HDLCPatch.ResolutionHeight, false);
             ResolutionWidthItem = new IntInputFieldConfigItem(HDLCPatch.ResolutionWidth, false);
 
-            LethalConfigManager.AddConfigItem(EnableHDPatchOverrideSettingsItem);
             LethalConfigManager.AddConfigItem(EnableResolutionOverrideItem);
             LethalConfigManager.AddConfigItem(ResolutionMethodItem);
             LethalConfigManager.AddConfigItem(ResolutionScaleItem);
             LethalConfigManager.AddConfigItem(ResolutionPresetItem);
             LethalConfigManager.AddConfigItem(ResolutionWidthItem);
             LethalConfigManager.AddConfigItem(ResolutionHeightItem);
+            LethalConfigManager.AddConfigItem(FogSettingMethodItem);
             LethalConfigManager.AddConfigItem(FogQualityItem);
+            LethalConfigManager.AddConfigItem(FogResolutionDepthRatioItem);
+            LethalConfigManager.AddConfigItem(VolumetricFogBudgetItem);
             LethalConfigManager.AddConfigItem(ShadowQualityItem);
             LethalConfigManager.AddConfigItem(LODQualityItem);
             LethalConfigManager.AddConfigItem(TextureQualityItem);
