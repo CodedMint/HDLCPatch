@@ -18,6 +18,7 @@ namespace HDLethalCompanyPatch.config
         public static FloatSliderConfigItem ResolutionScaleItem;
         public static FloatSliderConfigItem VolumetricFogBudgetItem;
         public static FloatSliderConfigItem FogResolutionDepthRatioItem;
+        public static FloatSliderConfigItem FontScaleItem;
         public static IntInputFieldConfigItem ResolutionWidthItem;
         public static IntInputFieldConfigItem ResolutionHeightItem;
         public static BoolCheckBoxConfigItem EnableFogItem;
@@ -26,6 +27,7 @@ namespace HDLethalCompanyPatch.config
         public static BoolCheckBoxConfigItem EnableResolutionOverrideItem;
         public static BoolCheckBoxConfigItem EnableAntiAliasingItem;
         public static BoolCheckBoxConfigItem DisableFoliageConfigItem;
+        public static BoolCheckBoxConfigItem EnableSteamProfileImageFixItem;
 
         public static void Setup()
         {
@@ -50,6 +52,7 @@ namespace HDLethalCompanyPatch.config
             ResolutionPresetItem = new EnumDropDownConfigItem<ResolutionPreset>(HDLCPatch.ResolutionPresetValue, false);
             ResolutionHeightItem = new IntInputFieldConfigItem(HDLCPatch.ResolutionHeight, false);
             ResolutionWidthItem = new IntInputFieldConfigItem(HDLCPatch.ResolutionWidth, false);
+            EnableSteamProfileImageFixItem = new BoolCheckBoxConfigItem(HDLCPatch.EnableSteamProfileImageFix, false);
 
             LethalConfigManager.AddConfigItem(EnableResolutionOverrideItem);
             LethalConfigManager.AddConfigItem(ResolutionMethodItem);
@@ -64,6 +67,7 @@ namespace HDLethalCompanyPatch.config
             LethalConfigManager.AddConfigItem(ShadowQualityItem);
             LethalConfigManager.AddConfigItem(LODQualityItem);
             LethalConfigManager.AddConfigItem(TextureQualityItem);
+            LethalConfigManager.AddConfigItem(EnableSteamProfileImageFixItem);
             LethalConfigManager.AddConfigItem(EnablePostProcessingItem);
             LethalConfigManager.AddConfigItem(EnableFogItem);
             LethalConfigManager.AddConfigItem(EnableFoliageItem);
