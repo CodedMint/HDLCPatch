@@ -101,6 +101,7 @@ namespace HDLethalCompanyPatch
         public static ConfigEntry<bool> EnableResolutionOverride;
         public static ConfigEntry<bool> EnableAntiAliasing;
         public static ConfigEntry<bool> DisableFoliageConfig;
+        public static ConfigEntry<bool> EnableSteamProfileImageFix;
 
         public static Assembly HDLethal;
 
@@ -302,20 +303,21 @@ namespace HDLethalCompanyPatch
             Logger.LogInfo("Setting up config...");
 
             ResolutionScale = Config.Bind("Resolution", "ResolutionScale", 2.233f, "Resolution Scale Multiplier | 1.000 = 860x520p | 2.233 =~ 1920x1080p | 2.977 = 2560x1440p | 4.465 = 3840x2060p");
-            EnableFog = Config.Bind("QualitySettings", "EnableFog", true, "Toggles fog on or off");
-            FogQualityMethod = Config.Bind("QualitySettings", "FogQualitySettingMethod", FogSettingMethod.Presets, "Changes the method used to set fog quality.");
-            FogQuality = Config.Bind("QualitySettings", "FogQuality", FogQualitySetting.Low, "Adjusts the fog quality. Lower values will reduce GPU load.\nFogQualitySettingMethod must be set to Presets.");
-            FogResolutionDepthRatio = Config.Bind("QualitySettings", "FogResolutionDepthRatio", 0.3f, "Affects resolution of fog.\nFogQualitySettingMethod must be set to Sliders.");
-            VolumetricFogBudget = Config.Bind("QualitySettings", "VolumetricFogBudget", 0.3f, "Affects volumetric density of fog.\nFogQualitySettingMethod must be set to Sliders.");
-            ShadowQuality = Config.Bind("QualitySettings", "ShadowQuality", QualitySetting.High, "Adjusts the shadow resolution. Lower values reduce GPU load");
-            LODQuality = Config.Bind("QualitySettings", "LODQuality", QualitySetting.High, "Adjusts the lod distance. Low values reduce GPU load.");
-            TextureQuality = Config.Bind("QualitySettings", "TextureQuality", QualitySetting.High, "Changes texture resolution");
-            EnablePostProcessing = Config.Bind("QualitySettings", "EnablePostProcessing", true, "Turns on a color grading post process effect");
-            EnableFoliage = Config.Bind("QualitySettings", "EnableFoliage", true, "Toggles foliage on or off");
+            EnableFog = Config.Bind("Fog", "EnableFog", true, "Toggles fog on or off");
+            FogQualityMethod = Config.Bind("Fog", "FogQualitySettingMethod", FogSettingMethod.Presets, "Changes the method used to set fog quality.");
+            FogQuality = Config.Bind("Fog", "FogQuality", FogQualitySetting.Low, "Adjusts the fog quality. Lower values will reduce GPU load.\n\nFogQualitySettingMethod must be set to Presets.");
+            FogResolutionDepthRatio = Config.Bind("Fog", "FogResolutionDepthRatio", 0.3f, "Affects fog quality.\n\nFogQualitySettingMethod must be set to Sliders.");
+            VolumetricFogBudget = Config.Bind("Fog", "VolumetricFogBudget", 0.3f, "Affects fog quality.\n\nFogQualitySettingMethod must be set to Sliders.");
+            ShadowQuality = Config.Bind("Shadows", "ShadowQuality", QualitySetting.High, "Adjusts the shadow resolution. Lower values reduce GPU load");
+            LODQuality = Config.Bind("LOD", "LODQuality", QualitySetting.High, "Adjusts the lod (level of detail) distance. Low values reduce GPU load.");
+            TextureQuality = Config.Bind("TextureSettings", "TextureQuality", QualitySetting.High, "Changes texture resolution");
+            EnableSteamProfileImageFix = Config.Bind("TextureSettings", "SteamProfileImageFix", true, "Fixes blurry Steam profile images.");
+            EnablePostProcessing = Config.Bind("PostProcessing", "EnablePostProcessing", true, "Turns on a color grading post process effect");
+            EnableFoliage = Config.Bind("Foliage", "EnableFoliage", true, "Toggles foliage on or off");
             EnableResolutionOverride = Config.Bind("Resolution", "EnableResolutionOverride", true, "Toggles off or on overriding the vanilla resolution");
-            EnableAntiAliasing = Config.Bind("AntiAliasing", "EnableAntiAilasing", false, "Toggles anti-aliasing");
+            EnableAntiAliasing = Config.Bind("AntiAilasing", "EnableAntiAilasing", false, "Toggles anti-ailasing");
             DisableFoliageConfig = Config.Bind("Compatability", "DisableFoliageConfig", false, "Disables foliage setting to prevent an issue with certain mods");
-            AASetting = Config.Bind("AntiAliasing", "AAMode", AntiAliasingSetting.FAA, "Changes the type of anti-aliasing used");
+            AASetting = Config.Bind("AntiAilasing", "AAMode", AntiAliasingSetting.FAA, "Changes the type of anti-ailasing used");
             ResolutionMethod = Config.Bind("Resolution", "ResolutionMethod", ResolutionSettingMethod.ScaleSlider, "Changes how resolution should be set.");
             ResolutionPresetValue = Config.Bind("Resolution", "ResolutionPreset", ResolutionPreset.R1920x1080, "If ResolutionMethod is set to Preset, this setting will be used.");
             ResolutionWidth = Config.Bind("Resolution", "ResolutionWidth", 1920, "If ResolutionMethod is set to Custom, this value will be used for resolution width.");
@@ -351,6 +353,7 @@ namespace HDLethalCompanyPatch
             EnableFoliage.SettingChanged += SettingsChanged;
             EnableResolutionOverride.SettingChanged += SettingsChanged;
             TextureQuality.SettingChanged += SettingsChanged;
+            EnableSteamProfileImageFix.SettingChanged += SettingsChanged;
             EnableAntiAliasing.SettingChanged += SettingsChanged;
             AASetting.SettingChanged += SettingsChanged;
             ResolutionPresetValue.SettingChanged += SettingsChanged;
