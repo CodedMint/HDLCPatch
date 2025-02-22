@@ -2,8 +2,8 @@
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 using System.Reflection;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
@@ -22,6 +22,12 @@ namespace HDLethalCompanyPatch.patches
         public static bool StartCalled = false;
         public static int RenderResolutionWidth = 1;
         public static int RenderResolutionHeight = 1;
+        public static UnityEngine.Vector2 GameResolution = new Vector2(860, 520);
+        private const int _DefaultFontSize = 30;
+        public static Vector2 OriginalScale = new Vector2();
+        public static bool OriginalScaleSet = false;
+        public static float FontScale = 1;
+        public static int CurrentFontWidth = 0;
 
         public static void SettingsChanged()
         {
@@ -72,27 +78,18 @@ namespace HDLethalCompanyPatch.patches
 
                 SetFogQuality(cam);
                 TogglePostProcessing(cam);
-                HDLCPatchProperties.SetLevelOfDetail.Invoke(HDLCPatchProperties.GraphicsPatchObj, [cam]);
-                HDLCPatchProperties.SetShadowQuality.Invoke(HDLCPatchProperties.GraphicsPatchObj, [HDAssetBundle, cam]);
-                SetShadowQuality();
-
-                if (!HDLCPatch.DisableFoliageConfig.Value)
+                SetLODQuality(cam);
+                try
                 {
-                    if (!HDLCPatch.EnableFoliage.Value)
-                    {
-                        LayerMask mask = cam.GetComponent<Camera>().cullingMask;
-                        mask &= ~(0x1 << 10);
-                        cam.GetComponent<Camera>().cullingMask = mask;
-                        MaskRemoved = true;
-                    }
-                    else
-                    {
-                        LayerMask mask = cam.GetComponent<Camera>().cullingMask;
-                        mask |= 0x1 << 10;
-                        cam.GetComponent<Camera>().cullingMask = mask;
-                        MaskRemoved = false;
-                    }
+                    HDLCPatchProperties.SetShadowQuality.Invoke(HDLCPatchProperties.GraphicsPatchObj, [HDAssetBundle, cam]);
                 }
+                catch(Exception e)
+                {
+                    Console.WriteLine("Failed to set shadow quality HDLC reference missing...\n" + e.ToString());
+                }
+                //SetShadowQuality();
+
+                ToggleFoliage(cam);
 
                 if (cam.gameObject.name == "SecurityCamera" || cam.gameObject.name == "ShipCamera") continue;
 
@@ -100,6 +97,28 @@ namespace HDLethalCompanyPatch.patches
             }     
         }
 
+        public static void ToggleFoliage(HDAdditionalCameraData cam)
+        {
+            if (!HDLCPatch.DisableFoliageConfig.Value)
+            {
+                if (!HDLCPatch.EnableFoliage.Value)
+                {
+                    LayerMask mask = cam.GetComponent<Camera>().cullingMask;
+                    mask &= ~(0x1 << 10);
+                    cam.GetComponent<Camera>().cullingMask = mask;
+                    MaskRemoved = true;
+                }
+                else
+                {
+                    LayerMask mask = cam.GetComponent<Camera>().cullingMask;
+                    mask |= 0x1 << 10;
+                    cam.GetComponent<Camera>().cullingMask = mask;
+                    MaskRemoved = false;
+                }
+            }
+        }
+
+        //Do not change far clip plane here, keep that for a different setting such as view distance
         public static void SetLODQuality(HDAdditionalCameraData camera)
         {
             camera.renderingPathCustomFrameSettingsOverrideMask.mask[(int)FrameSettingsField.LODBiasMode] = true;
@@ -184,6 +203,8 @@ namespace HDLethalCompanyPatch.patches
 
             RenderResolutionHeight = resolutionHeight;
             RenderResolutionWidth = resolutionWidth;
+
+            GameResolution = new UnityEngine.Vector2(resolutionWidth, resolutionHeight);
 
             //UnityEngine.Vector2 aspectRatio = GetAspectRatio(resolutionWidth, resolutionHeight);
             //UnityEngine.Vector2 normalizedRatio = GetNormalizedAspectRatio(resolutionWidth, resolutionHeight);
@@ -366,7 +387,32 @@ namespace HDLethalCompanyPatch.patches
         [HarmonyPostfix]
         public static Texture2D GetTextureFromImagePostfix(Texture2D __result)
         {
-            __result.ignoreMipmapLimit = true;
+            if(HDLCPatch.EnableSteamProfileImageFix.Value)
+                __result.ignoreMipmapLimit = true;
+            return __result;
+        }
+
+        [HarmonyPatch(typeof(Terminal), "TextPostProcess")]
+        [HarmonyPostfix]
+        public static string TextPostProcessPostfix(string __result, Terminal __instance)
+        {
+            if(!OriginalScaleSet)
+            {
+                OriginalScale = new Vector2(__instance.playerScreenTexHighRes.width, __instance.playerScreenTexHighRes.height);
+                HDLCPatch.Logger.LogInfo("SCALE: " + OriginalScale.x + "|" + OriginalScale.y);
+                OriginalScaleSet = true;
+            }
+
+            CurrentFontWidth = RenderResolutionWidth;
+
+            if (__instance.playerScreenTexHighRes.width != CurrentFontWidth)
+            {
+                __instance.playerScreenTexHighRes.Release();
+                __instance.playerScreenTexHighRes.height = RenderResolutionHeight;
+                __instance.playerScreenTexHighRes.width = RenderResolutionWidth;
+                __instance.playerScreenTexHighRes.Create();
+            }
+
             return __result;
         }
 
