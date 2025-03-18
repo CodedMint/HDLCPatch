@@ -64,7 +64,7 @@ namespace HDLethalCompanyPatch
     {
         public const string Name = "HDLCPatch";
         public const string GUID = "HDLCPatch";
-        public const string Version = "1.3.0";
+        public const string Version = "1.4.0";
 
         public static Assembly HDAssembly;
         public static object GraphicsPatchObj;
@@ -75,7 +75,7 @@ namespace HDLethalCompanyPatch
     }
 
     [BepInPlugin(HDLCPatchProperties.GUID, HDLCPatchProperties.Name, HDLCPatchProperties.Version)]
-    [BepInDependency("HDLethalCompany", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency("HDLethalCompany", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("LethalConfig", BepInDependency.DependencyFlags.SoftDependency)]
     public class HDLCPatch : BaseUnityPlugin
     {
@@ -101,9 +101,18 @@ namespace HDLethalCompanyPatch
         public static ConfigEntry<bool> EnableResolutionOverride;
         public static ConfigEntry<bool> EnableAntiAliasing;
         public static ConfigEntry<bool> DisableFoliageConfig;
+        public static ConfigEntry<bool> DisableShadowConfig;
+        public static ConfigEntry<bool> DisableCatwalkRemoval;
         public static ConfigEntry<bool> EnableSteamProfileImageFix;
+        public static ConfigEntry<bool> DisableResolutionConfig;
+        public static ConfigEntry<bool> DisableLODConfig;
+        public static ConfigEntry<bool> DisablePostProcessConfig;
+        public static ConfigEntry<bool> DisableTerminalResolutionFix;
+        public static ConfigEntry<bool> DisableFogConfig;
+        public static ConfigEntry<bool> DisableTextureConfig;
 
         public static Assembly HDLethal;
+        public static bool HDLethalCompanyFound = false;
 
         private void Awake()
         {
@@ -177,7 +186,7 @@ namespace HDLethalCompanyPatch
             }
             else
             {
-                Logger.LogFatal("Failed to unpatch RoundPostfix");
+                Logger.LogWarning("Failed to Unpatch RoundPostfix. Either HDLethalCompany is not installed or it failed.\nYou can ignore this if you do not want HDLethalCompany installed.");
             }
 
             if (startPrefixSuccess)
@@ -186,14 +195,21 @@ namespace HDLethalCompanyPatch
             }
             else
             {
-                Logger.LogFatal("Failed to unpatch StartPrefix");
+                Logger.LogWarning("Failed to Unpatch StartPrefix. Either HDLethalCompany is not installed or it failed.\nYou can ignore this if you do not want HDLethalCompany installed.");
+            }
+
+            if(startPrefixSuccess && roundPostfixSuccess)
+            {
+                HDLethalCompanyFound = true;
             }
 
             _harmony.PatchAll(typeof(HDLCGraphicsPatch));
 
+
             try
             {
-                SetupInternalMethods(HDLethal);
+                if(HDLethalCompanyFound)
+                    SetupInternalMethods(HDLethal);
             }
             catch(Exception e)
             {
@@ -230,7 +246,7 @@ namespace HDLethalCompanyPatch
             }
             else
             {
-                Logger.LogFatal("Failed to set internal references to HDLethalCompany methods. Things might not work right!");
+                Logger.LogWarning("Failed to set internal references to HDLethalCompany methods. Either HDLethalCompany is not installed or it failed.\nYou can ignore this if you do not want HDLethalCompany installed.");
             }
         }
 
@@ -302,16 +318,21 @@ namespace HDLethalCompanyPatch
         {
             Logger.LogInfo("Setting up config...");
 
+            DisableLODConfig = Config.Bind("Compatability", "DisableLODConfig", false, "Disables LOD settings.\nCheck this if you have issues with LOD's or another mod that manages them.");
+            DisableResolutionConfig = Config.Bind("Compatability", "DisableResolutionConfig", false, "Check this if you have another mod managing resolution or HUD elements break.");
+            DisableCatwalkRemoval = Config.Bind("LOD", "DisableCatwalkLODRemoval", false, "By default HDLethalCompany would remove the LOD for a Catwalk object.\nThis is here in case you have a reason to disable the removal of it.");
+            DisableShadowConfig = Config.Bind("Compatability", "DisableShadowConfig", false, "This is the only part of HDLethalCompany still being used.\n\nToggle to false if you want shadow settings. It may break things in certain scenarios, but you can toggle it back on if you REALLY need the extra performance.\n\nThis is the last feature that HDLCPatch does not manage itself.\n\nFeature is automatically disabled if HDLethalCompany is not found.");
             ResolutionScale = Config.Bind("Resolution", "ResolutionScale", 2.233f, "Resolution Scale Multiplier | 1.000 = 860x520p | 2.233 =~ 1920x1080p | 2.977 = 2560x1440p | 4.465 = 3840x2060p");
             EnableFog = Config.Bind("Fog", "EnableFog", true, "Toggles fog on or off");
             FogQualityMethod = Config.Bind("Fog", "FogQualitySettingMethod", FogSettingMethod.Presets, "Changes the method used to set fog quality.");
             FogQuality = Config.Bind("Fog", "FogQuality", FogQualitySetting.Low, "Adjusts the fog quality. Lower values will reduce GPU load.\n\nFogQualitySettingMethod must be set to Presets.");
             FogResolutionDepthRatio = Config.Bind("Fog", "FogResolutionDepthRatio", 0.3f, "Affects fog quality.\n\nFogQualitySettingMethod must be set to Sliders.");
             VolumetricFogBudget = Config.Bind("Fog", "VolumetricFogBudget", 0.3f, "Affects fog quality.\n\nFogQualitySettingMethod must be set to Sliders.");
-            ShadowQuality = Config.Bind("Shadows", "ShadowQuality", QualitySetting.High, "Adjusts the shadow resolution. Lower values reduce GPU load");
+            ShadowQuality = Config.Bind("Shadows", "ShadowQuality", QualitySetting.High, "Adjusts the shadow resolution. Lower values reduce GPU load\nFeature is disabled if HDLethalCompany is not found.");
             LODQuality = Config.Bind("LOD", "LODQuality", QualitySetting.High, "Adjusts the lod (level of detail) distance. Low values reduce GPU load.");
             TextureQuality = Config.Bind("TextureSettings", "TextureQuality", QualitySetting.High, "Changes texture resolution");
             EnableSteamProfileImageFix = Config.Bind("TextureSettings", "SteamProfileImageFix", true, "Fixes blurry Steam profile images.");
+            DisablePostProcessConfig = Config.Bind("Compatability", "DisablePostProcessConfig", false, "Disables the toggle for post-processing effects.\nCheck this if you have an issue with post-processing.");
             EnablePostProcessing = Config.Bind("PostProcessing", "EnablePostProcessing", true, "Turns on a color grading post process effect");
             EnableFoliage = Config.Bind("Foliage", "EnableFoliage", true, "Toggles foliage on or off");
             EnableResolutionOverride = Config.Bind("Resolution", "EnableResolutionOverride", true, "Toggles off or on overriding the vanilla resolution");
@@ -322,6 +343,9 @@ namespace HDLethalCompanyPatch
             ResolutionPresetValue = Config.Bind("Resolution", "ResolutionPreset", ResolutionPreset.R1920x1080, "If ResolutionMethod is set to Preset, this setting will be used.");
             ResolutionWidth = Config.Bind("Resolution", "ResolutionWidth", 1920, "If ResolutionMethod is set to Custom, this value will be used for resolution width.");
             ResolutionHeight = Config.Bind("Resolution", "ResolutionHeight", 1080, "If ResolutionMethod is set to Custom, this value will be used for resolution height.");
+            DisableTerminalResolutionFix = Config.Bind("Compatability", "DisableTerminalResolutionFix", false, "Check this if you have issues with the terminal text.");
+            DisableTextureConfig = Config.Bind("Compatability", "DisableTextureConfig", false, "Check this if you have issues with textures breaking.");
+            DisableFogConfig = Config.Bind("Compatability", "DisableFogConfig", false, "Check this if you have issues with fog breaking.");
 
             //Check if LethalConfig is installed
             Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
@@ -334,6 +358,11 @@ namespace HDLethalCompanyPatch
                     SetupLethalConfig();
                     break;
                 }
+            }
+
+            if(!HDLethalCompanyFound)
+            {
+                DisableShadowConfig.Value = true;
             }
 
             Logger.LogInfo("Config setup complete!");
@@ -363,6 +392,14 @@ namespace HDLethalCompanyPatch
             FogQualityMethod.SettingChanged += SettingsChanged;
             FogResolutionDepthRatio.SettingChanged += SettingsChanged;
             VolumetricFogBudget.SettingChanged += SettingsChanged;
+            DisableCatwalkRemoval.SettingChanged += SettingsChanged;
+            DisableShadowConfig.SettingChanged += SettingsChanged;
+            DisableResolutionConfig.SettingChanged += SettingsChanged;
+            DisableLODConfig.SettingChanged += SettingsChanged;
+            DisablePostProcessConfig.SettingChanged += SettingsChanged;
+            DisableFogConfig.SettingChanged += SettingsChanged;
+            DisableTerminalResolutionFix.SettingChanged += SettingsChanged;
+            DisableTextureConfig.SettingChanged += SettingsChanged;
 
             Logger.LogInfo("Finished setting variables for Lethal Config and setting up events");
         }

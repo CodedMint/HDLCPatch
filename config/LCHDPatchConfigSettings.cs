@@ -28,6 +28,14 @@ namespace HDLethalCompanyPatch.config
         public static BoolCheckBoxConfigItem EnableAntiAliasingItem;
         public static BoolCheckBoxConfigItem DisableFoliageConfigItem;
         public static BoolCheckBoxConfigItem EnableSteamProfileImageFixItem;
+        public static BoolCheckBoxConfigItem DisableCatwalkRemovalItem;
+        public static BoolCheckBoxConfigItem DisableShadowsConfigItem;
+        public static BoolCheckBoxConfigItem DisableLODConfigItem;
+        public static BoolCheckBoxConfigItem DisableResolutionConfigItem;
+        public static BoolCheckBoxConfigItem DisablePostProcessConfigItem;
+        public static BoolCheckBoxConfigItem DisableTextureConfigItem;
+        public static BoolCheckBoxConfigItem DisableFogConfigItem;
+        public static BoolCheckBoxConfigItem DisableTerminalFixItem;
 
         public static void Setup()
         {
@@ -53,7 +61,19 @@ namespace HDLethalCompanyPatch.config
             ResolutionHeightItem = new IntInputFieldConfigItem(HDLCPatch.ResolutionHeight, false);
             ResolutionWidthItem = new IntInputFieldConfigItem(HDLCPatch.ResolutionWidth, false);
             EnableSteamProfileImageFixItem = new BoolCheckBoxConfigItem(HDLCPatch.EnableSteamProfileImageFix, false);
+            DisableCatwalkRemovalItem = new BoolCheckBoxConfigItem(HDLCPatch.DisableCatwalkRemoval, false);
+            DisableShadowsConfigItem = new BoolCheckBoxConfigItem(HDLCPatch.DisableShadowConfig, true);
+            DisableResolutionConfigItem = new BoolCheckBoxConfigItem(HDLCPatch.DisableResolutionConfig, true);
+            DisableLODConfigItem = new BoolCheckBoxConfigItem(HDLCPatch.DisableLODConfig, true);
+            DisablePostProcessConfigItem = new BoolCheckBoxConfigItem(HDLCPatch.DisablePostProcessConfig, true);
+            DisableTextureConfigItem = new BoolCheckBoxConfigItem(HDLCPatch.DisableTextureConfig, true);
+            DisableTerminalFixItem = new BoolCheckBoxConfigItem(HDLCPatch.DisableTerminalResolutionFix, true);
+            DisableFogConfigItem = new BoolCheckBoxConfigItem(HDLCPatch.DisableFogConfig, true);
 
+            LethalConfigManager.AddConfigItem(DisableResolutionConfigItem);
+            LethalConfigManager.AddConfigItem(DisableFogConfigItem);
+            LethalConfigManager.AddConfigItem(DisableTerminalFixItem);
+            LethalConfigManager.AddConfigItem(DisableTextureConfigItem);
             LethalConfigManager.AddConfigItem(EnableResolutionOverrideItem);
             LethalConfigManager.AddConfigItem(ResolutionMethodItem);
             LethalConfigManager.AddConfigItem(ResolutionScaleItem);
@@ -64,10 +84,14 @@ namespace HDLethalCompanyPatch.config
             LethalConfigManager.AddConfigItem(FogQualityItem);
             LethalConfigManager.AddConfigItem(FogResolutionDepthRatioItem);
             LethalConfigManager.AddConfigItem(VolumetricFogBudgetItem);
+            LethalConfigManager.AddConfigItem(DisableShadowsConfigItem);
             LethalConfigManager.AddConfigItem(ShadowQualityItem);
+            LethalConfigManager.AddConfigItem(DisableLODConfigItem);
             LethalConfigManager.AddConfigItem(LODQualityItem);
+            LethalConfigManager.AddConfigItem(DisableCatwalkRemovalItem);
             LethalConfigManager.AddConfigItem(TextureQualityItem);
             LethalConfigManager.AddConfigItem(EnableSteamProfileImageFixItem);
+            LethalConfigManager.AddConfigItem(DisablePostProcessConfigItem);
             LethalConfigManager.AddConfigItem(EnablePostProcessingItem);
             LethalConfigManager.AddConfigItem(EnableFogItem);
             LethalConfigManager.AddConfigItem(EnableFoliageItem);

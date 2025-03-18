@@ -31,41 +31,23 @@ namespace HDLethalCompanyPatch.patches
 
         public static void SettingsChanged()
         {
-            try
+            HDLCPatch.Logger.LogInfo("Applying settings changes...");
+
+            //Make sure the player reference is not null before setting some settings
+            if (PlayerRef != null)
             {
-                HDLCPatch.Logger.LogInfo("Applying settings changes...");
-
-                //Make sure the player reference is not null before setting some settings
-                if (PlayerRef != null)
-                {
-                    try { SetCameraData(PlayerRef); } catch(Exception e) { HDLCPatch.Logger.LogError($"Failed to set camera related settings\n{e.ToString()}"); }
-                    try { SetResolution(PlayerRef); } catch(Exception e) { HDLCPatch.Logger.LogError($"Failed to set resolution\n{e.ToString()}"); }
-                }
-
-                try { SetTextureQuality(); } catch(Exception e) { HDLCPatch.Logger.LogError($"Failed to set texture quality\n{e.ToString()}"); }
-
-                HDLCPatch.Logger.LogInfo("Settings applied");
+                try { SetCameraData(PlayerRef); } catch (Exception e) { HDLCPatch.Logger.LogError($"Failed to set camera related settings\n{e.ToString()}"); }
+                try { SetResolution(PlayerRef); } catch (Exception e) { HDLCPatch.Logger.LogError($"Failed to set resolution\n{e.ToString()}"); }
             }
-            catch(Exception ex)
-            {
-                HDLCPatch.Logger.LogError("Failed to change settings!");
-                HDLCPatch.Logger.LogError(ex.ToString());
-                HDLCPatch.Logger.LogInfo("Attempting to try reset internal methods");
 
-                try
-                {
-                    Assembly assembly = HDLCPatch.HarmonyGetAssembly("HDLethalCompany");
-                    HDLCPatch.SetupInternalMethods(assembly);
-                    HDLCPatch.Logger.LogInfo("Reset may have succeded. Try changing settings again");
-                }
-                catch(Exception e) 
-                {
-                    HDLCPatch.Logger.LogFatal("Failed to setup internal method references");
-                    HDLCPatch.Logger.LogError(e.ToString());
-                }
-            }
+            try { SetTextureQuality(); } catch (Exception e) { HDLCPatch.Logger.LogError($"Failed to set texture quality\n{e.ToString()}"); }
+
+            HDLCPatch.Logger.LogInfo("Settings applied");
         }
 
+        #region Quality Settings
+
+        #region Set Camera Data
         public static void SetCameraData(PlayerControllerB player)
         {
             HDAdditionalCameraData[] cameras = Resources.FindObjectsOfTypeAll<HDAdditionalCameraData>();
@@ -79,15 +61,8 @@ namespace HDLethalCompanyPatch.patches
                 SetFogQuality(cam);
                 TogglePostProcessing(cam);
                 SetLODQuality(cam);
-                try
-                {
-                    HDLCPatchProperties.SetShadowQuality.Invoke(HDLCPatchProperties.GraphicsPatchObj, [HDAssetBundle, cam]);
-                }
-                catch(Exception e)
-                {
-                    Console.WriteLine("Failed to set shadow quality HDLC reference missing...\n" + e.ToString());
-                }
-                //SetShadowQuality();
+
+                SetShadowQuality(cam);
 
                 ToggleFoliage(cam);
 
@@ -96,31 +71,38 @@ namespace HDLethalCompanyPatch.patches
                 SetAntiAliasing(cam);
             }     
         }
+        #endregion
 
+        #region Toggle Foliage
         public static void ToggleFoliage(HDAdditionalCameraData cam)
         {
-            if (!HDLCPatch.DisableFoliageConfig.Value)
+            if (HDLCPatch.DisableFoliageConfig.Value)
+                return;
+
+            if (!HDLCPatch.EnableFoliage.Value)
             {
-                if (!HDLCPatch.EnableFoliage.Value)
-                {
-                    LayerMask mask = cam.GetComponent<Camera>().cullingMask;
-                    mask &= ~(0x1 << 10);
-                    cam.GetComponent<Camera>().cullingMask = mask;
-                    MaskRemoved = true;
-                }
-                else
-                {
-                    LayerMask mask = cam.GetComponent<Camera>().cullingMask;
-                    mask |= 0x1 << 10;
-                    cam.GetComponent<Camera>().cullingMask = mask;
-                    MaskRemoved = false;
-                }
+                LayerMask mask = cam.GetComponent<Camera>().cullingMask;
+                mask &= ~(0x1 << 10);
+                cam.GetComponent<Camera>().cullingMask = mask;
+                MaskRemoved = true;
+            }
+            else
+            {
+                LayerMask mask = cam.GetComponent<Camera>().cullingMask;
+                mask |= 0x1 << 10;
+                cam.GetComponent<Camera>().cullingMask = mask;
+                MaskRemoved = false;
             }
         }
+        #endregion
 
+        #region Set LOD Quality
         //Do not change far clip plane here, keep that for a different setting such as view distance
         public static void SetLODQuality(HDAdditionalCameraData camera)
         {
+            if (HDLCPatch.DisableLODConfig.Value)
+                return;
+
             camera.renderingPathCustomFrameSettingsOverrideMask.mask[(int)FrameSettingsField.LODBiasMode] = true;
             camera.renderingPathCustomFrameSettingsOverrideMask.mask[(int)FrameSettingsField.LODBias] = true;
 
@@ -148,9 +130,14 @@ namespace HDLethalCompanyPatch.patches
                     break;
             }
         }
+        #endregion
 
+        #region Set Resolution
         public static void SetResolution(PlayerControllerB player)
         {
+            if(HDLCPatch.DisableResolutionConfig.Value) 
+                return;
+
             int resolutionWidth = 860;
             int resolutionHeight = 520;
 
@@ -211,13 +198,18 @@ namespace HDLethalCompanyPatch.patches
 
             //HDLCPatch.Logger.LogInfo("Resolution " + $"{resolutionWidth}x{resolutionHeight} Aspect Ratio: {aspectRatio.x}:{aspectRatio.y}");
 
+            player.gameplayCamera.aspect = resolutionWidth / resolutionHeight;
+            //player.playerScreen.canvas.renderingDisplaySize;
+
             player.gameplayCamera.targetTexture.Release();
             //player.gameplayCamera.rect = new Rect(default, normalizedRatio) { center = new UnityEngine.Vector2(0.5f, 0.5f)};
             player.gameplayCamera.targetTexture.width = resolutionWidth;
             player.gameplayCamera.targetTexture.height = resolutionHeight;
             player.gameplayCamera.targetTexture.Create();
         }
+        #endregion
 
+        #region Get Normalized Aspect Ratio
         public static UnityEngine.Vector2 GetNormalizedAspectRatio(int width, int height)
         {
             UnityEngine.Vector2 aspectRatio = GetAspectRatio(width, height);
@@ -225,13 +217,17 @@ namespace HDLethalCompanyPatch.patches
 
             return aspectRatio / resolution;
         }
+        #endregion
 
+        #region Get Aspect Ratio
         public static UnityEngine.Vector2 GetAspectRatio(int width, int height)
         {
             int gcd = GetGCD(width, height);
             return new UnityEngine.Vector2(width / gcd, height / gcd);
         }
+        #endregion
 
+        #region Greatest Common Denominator
         public static int GetGCD(int a, int b)
         {
             while( a != 0 && b != 0 )
@@ -248,14 +244,31 @@ namespace HDLethalCompanyPatch.patches
 
             return a | b;
         }
+        #endregion
 
-        public static void SetShadowQuality()
+        #region Set Shadow Quality
+        public static void SetShadowQuality(HDAdditionalCameraData cam)
         {
-            HDRenderPipelineAsset pipelineAsset = (HDRenderPipelineAsset)QualitySettings.renderPipeline;
-            RenderPipelineSettings pipelineSettings = pipelineAsset.currentPlatformRenderPipelineSettings;
-            HDShadowInitParameters shadow = pipelineSettings.hdShadowInitParams;
+            if (HDLCPatch.DisableShadowConfig.Value)
+                return;
 
-            HDLCPatch.Logger.LogInfo("----Shadow Settings----\n" +
+            if (!HDLCPatch.HDLethalCompanyFound)
+                return;
+
+            try
+            {
+                HDLCPatchProperties.SetShadowQuality.Invoke(HDLCPatchProperties.GraphicsPatchObj, [HDAssetBundle, cam]);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Failed to set shadow quality HDLC reference missing...\n" + e.ToString());
+            }
+
+            //HDRenderPipelineAsset pipelineAsset = (HDRenderPipelineAsset)QualitySettings.renderPipeline;
+            //RenderPipelineSettings pipelineSettings = pipelineAsset.currentPlatformRenderPipelineSettings;
+            //HDShadowInitParameters shadow = pipelineSettings.hdShadowInitParams;
+
+            /*HDLCPatch.Logger.LogInfo("----Shadow Settings----\n" +
                 $"AllowDirectionalMixedCachedShadows: {shadow.allowDirectionalMixedCachedShadows}\n" +
                 $"AreaShadowFilteringQuality: {shadow.areaShadowFilteringQuality}\n" +
                 $"DirectionalShadowsDepthBits: {shadow.directionalShadowsDepthBits}\n" +
@@ -272,17 +285,27 @@ namespace HDLethalCompanyPatch.patches
                 $"CachedAreaLightShadowAtlas: {shadow.cachedAreaLightShadowAtlas}\n" +
                 $"AreaLightShadowAtlas.ShadowAtlasResolution: {shadow.areaLightShadowAtlas.shadowAtlasResolution}\n" +
                 $"AreaLightShadowAtlas.UseDynamicViewportRescale: {shadow.areaLightShadowAtlas.useDynamicViewportRescale}\n" +
-                $"-----------------------");
+                $"-----------------------");*/
         }
+        #endregion
 
+        #region Toggle Post Processing
         public static void TogglePostProcessing(HDAdditionalCameraData camera)
         {
+            if (HDLCPatch.DisablePostProcessConfig.Value)
+                return;
+
             camera.renderingPathCustomFrameSettingsOverrideMask.mask[(int)FrameSettingsField.CustomPass] = true;
             camera.renderingPathCustomFrameSettings.SetEnabled(FrameSettingsField.CustomPass, HDLCPatch.EnablePostProcessing.Value);
         }
+        #endregion
 
+        #region Set Fog Quality
         public static void SetFogQuality(HDAdditionalCameraData camera)
         {
+            if (HDLCPatch.DisableFogConfig.Value)
+                return;
+
             if (!CanChangeFog)
                 return;
 
@@ -350,13 +373,20 @@ namespace HDLethalCompanyPatch.patches
                 HDLCPatch.Logger.LogError($"Failed to set fog!\n{e.ToString()}");
             }
         }
+        #endregion
 
+        #region Set Texture Quality
         public static void SetTextureQuality()
         {
+            if (HDLCPatch.DisableTextureConfig.Value)
+                return;
+
             int quality = 3 - (int)HDLCPatch.TextureQuality.Value;
             QualitySettings.globalTextureMipmapLimit = quality;
         }
+        #endregion
 
+        #region Set Anti Aliasing
         public static void SetAntiAliasing(HDAdditionalCameraData camera)
         {
             if(HDLCPatch.EnableAntiAliasing.Value)
@@ -382,7 +412,10 @@ namespace HDLethalCompanyPatch.patches
                 camera.antialiasing = HDAdditionalCameraData.AntialiasingMode.None;
             }
         }
+        #endregion
+        #endregion
 
+        #region Patches
         [HarmonyPatch(typeof(HUDManager), nameof(HUDManager.GetTextureFromImage))]
         [HarmonyPostfix]
         public static Texture2D GetTextureFromImagePostfix(Texture2D __result)
@@ -396,6 +429,9 @@ namespace HDLethalCompanyPatch.patches
         [HarmonyPostfix]
         public static string TextPostProcessPostfix(string __result, Terminal __instance)
         {
+            if (HDLCPatch.DisableResolutionConfig.Value || HDLCPatch.DisableTerminalResolutionFix.Value)
+                return __result;
+
             if(!OriginalScaleSet)
             {
                 OriginalScale = new Vector2(__instance.playerScreenTexHighRes.width, __instance.playerScreenTexHighRes.height);
@@ -420,6 +456,9 @@ namespace HDLethalCompanyPatch.patches
         [HarmonyPostfix]
         public static void UpdateScanNodesPostfix(PlayerControllerB playerScript, HUDManager __instance, Dictionary<RectTransform, ScanNodeProperties> ___scanNodes)
         {
+            if (HDLCPatch.DisableResolutionConfig.Value)
+                return;
+
             for(int i = 0; i < __instance.scanElements.Length; i++)
             {
                 if (___scanNodes.TryGetValue(__instance.scanElements[i], out ScanNodeProperties scanNode))
@@ -468,10 +507,23 @@ namespace HDLethalCompanyPatch.patches
             SettingsChanged();
 
             if (HDLCPatch.LODQuality.Value != 0) return;
+            if (HDLCPatch.DisableCatwalkRemoval.Value) return;
+
             HDLCPatch.Logger.LogInfo("Removing catwalk stairs lod");
-            HDLCPatchProperties.RemoveLodFromGameObject.Invoke(HDLCPatchProperties.GraphicsPatchObj, ["CatwalkStairs"]);
+            RemoveLOD("CatwalkStairs");
+        }
+        #endregion
+
+        public static void RemoveLOD(string name)
+        {
+            UnityEngine.Object[] groups = Resources.FindObjectsOfTypeAll(typeof(LODGroup));
+
+            foreach (LODGroup group in groups)
+            {
+                if (group.gameObject.name == name) group.enabled = false;
+            }
         }
 
-        
+
     }
 }
