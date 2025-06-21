@@ -198,7 +198,7 @@ namespace HDLethalCompanyPatch.patches
 
             //HDLCPatch.Logger.LogInfo("Resolution " + $"{resolutionWidth}x{resolutionHeight} Aspect Ratio: {aspectRatio.x}:{aspectRatio.y}");
 
-            player.gameplayCamera.aspect = resolutionWidth / resolutionHeight;
+            player.gameplayCamera.aspect = (float)resolutionWidth / resolutionHeight;
             //player.playerScreen.canvas.renderingDisplaySize;
 
             player.gameplayCamera.targetTexture.Release();
