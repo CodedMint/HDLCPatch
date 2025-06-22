@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using TMPro;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
@@ -17,7 +18,6 @@ namespace HDLethalCompanyPatch.patches
         public static bool CanChangeFog = false;
         public static LayerMask DefaultCullingMask = 0;
         public static AssetBundle HDAssetBundle = null;
-        public static PlayerControllerB PlayerRef;
         public static bool MaskRemoved = false;
         public static bool StartCalled = false;
         public static int RenderResolutionWidth = 1;
@@ -29,15 +29,35 @@ namespace HDLethalCompanyPatch.patches
         public static float FontScale = 1;
         public static int CurrentFontWidth = 0;
 
+        public static List<PlayerControllerB> GetPlayersWithCamera()
+        {
+            PlayerControllerB[] players = UnityEngine.GameObject.FindObjectsOfType<PlayerControllerB>();
+            List <PlayerControllerB> camPlayers = new List<PlayerControllerB>();
+
+            for (int i = 0; i < players.Length; i++)
+            {
+                HDLCPatch.Logger.LogInfo("Player has a camera");
+
+                if (players[i].gameplayCamera != null)
+                {
+                    HDLCPatch.Logger.LogInfo("Player has a camera");
+                    camPlayers.Add(players[i]);
+                }
+
+                HDLCPatch.Logger.LogInfo("Player does not have a camera");
+            }
+
+            return camPlayers;
+        }
+
         public static void SettingsChanged()
         {
             HDLCPatch.Logger.LogInfo("Applying settings changes...");
 
-            //Make sure the player reference is not null before setting some settings
-            if (PlayerRef != null)
+            foreach (PlayerControllerB camPlayer in GetPlayersWithCamera())
             {
-                try { SetCameraData(PlayerRef); } catch (Exception e) { HDLCPatch.Logger.LogError($"Failed to set camera related settings\n{e.ToString()}"); }
-                try { SetResolution(PlayerRef); } catch (Exception e) { HDLCPatch.Logger.LogError($"Failed to set resolution\n{e.ToString()}"); }
+                try { SetCameraData(camPlayer); } catch (Exception e) { HDLCPatch.Logger.LogError($"Failed to set camera related settings\n{e.ToString()}"); }
+                try { SetResolution(camPlayer); } catch (Exception e) { HDLCPatch.Logger.LogError($"Failed to set resolution\n{e.ToString()}"); }
             }
 
             try { SetTextureQuality(); } catch (Exception e) { HDLCPatch.Logger.LogError($"Failed to set texture quality\n{e.ToString()}"); }
@@ -263,7 +283,7 @@ namespace HDLethalCompanyPatch.patches
             {
                 Console.WriteLine("Failed to set shadow quality HDLC reference missing...\n" + e.ToString());
             }
-
+            #region Shadow Experiment
             //HDRenderPipelineAsset pipelineAsset = (HDRenderPipelineAsset)QualitySettings.renderPipeline;
             //RenderPipelineSettings pipelineSettings = pipelineAsset.currentPlatformRenderPipelineSettings;
             //HDShadowInitParameters shadow = pipelineSettings.hdShadowInitParams;
@@ -286,6 +306,7 @@ namespace HDLethalCompanyPatch.patches
                 $"AreaLightShadowAtlas.ShadowAtlasResolution: {shadow.areaLightShadowAtlas.shadowAtlasResolution}\n" +
                 $"AreaLightShadowAtlas.UseDynamicViewportRescale: {shadow.areaLightShadowAtlas.useDynamicViewportRescale}\n" +
                 $"-----------------------");*/
+            #endregion
         }
         #endregion
 
@@ -483,7 +504,6 @@ namespace HDLethalCompanyPatch.patches
             if (!StartCalled)
             {
                 CanChangeFog = true;
-                PlayerRef = __instance;
                 StartCalled = true;
 
                 SettingsChanged();
