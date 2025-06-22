@@ -64,7 +64,7 @@ namespace HDLethalCompanyPatch
     {
         public const string Name = "HDLCPatch";
         public const string GUID = "HDLCPatch";
-        public const string Version = "1.4.0";
+        public const string Version = "1.4.1";
 
         public static Assembly HDAssembly;
         public static object GraphicsPatchObj;
